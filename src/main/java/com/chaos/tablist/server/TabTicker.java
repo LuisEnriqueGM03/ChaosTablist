@@ -29,7 +29,7 @@ import net.minecraft.server.level.ServerPlayer;
 /**
  * Corre cada tick del servidor:
  * <ul>
- *   <li>Cada segundo recalcula los valores, los manda a los clientes con mod y ordena los equipos.</li>
+ *   <li>Cada segundo recalcula los valores y los manda a los clientes con mod.</li>
  *   <li>Cada {@code updateTicks} monta el Tab de los clientes vanilla (header, footer y nombres) y solo manda
  *       lo que cambió.</li>
  * </ul>
@@ -62,7 +62,7 @@ public final class TabTicker {
 			TabServer.sendIcons(player);
 			TabServer.sendConfig(player);
 		}
-		// Valores al momento: así el que entra ya tiene su grupo y sus datos en el primer frame.
+		// Valores al momento: así el que entra ya tiene su rango y sus datos en el primer frame.
 		ServerValues.update(player.server, TabStore.config());
 		broadcastValues(player.server);
 	}
@@ -91,7 +91,6 @@ public final class TabTicker {
 		if (ticks % 20 == 0) {
 			ServerValues.update(server, config);
 			broadcastValues(server);
-			TabSorting.update(server, config);
 		}
 		if (!config.enabled) {
 			if (wasEnabled) {
@@ -131,7 +130,7 @@ public final class TabTicker {
 		for (ServerPlayer p : all) {
 			Map<String, String> values = ServerValues.player(p.getUUID());
 			ServerContext ctx = new ServerContext(config, values, values, server.registryAccess(), now);
-			String template = config.rowTemplate(values.get("group"), p.getStringUUID()) + config.ping.vanillaSuffix;
+			String template = config.rowTemplate(p.getStringUUID()) + config.ping.vanillaSuffix;
 			Component name = Evaluator.toComponent(Evaluator.eval(template, ctx));
 			if (!name.equals(DISPLAY_NAMES.get(p.getUUID()))) {
 				DISPLAY_NAMES.put(p.getUUID(), name);
@@ -183,6 +182,5 @@ public final class TabTicker {
 				p.connection.send(new ClientboundTabListPacket(Component.empty(), Component.empty()));
 			}
 		}
-		TabSorting.clear(server);
 	}
 }

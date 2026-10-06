@@ -1,6 +1,6 @@
 # Chaos Tablist
 
-Mod de Fabric (Minecraft 1.21.1) para personalizar el Tab al máximo: header y footer con varias líneas, formato de cada jugador por grupos, ping, degradados, fade, arcoíris, animaciones por letra, fondos detrás del texto, iconos y badges en pixel art (como los de Chaos Ranks), datos del servidor (TPS, RAM, CPU…) y del cliente (FPS, RAM, hora). Todo se edita **en caliente** con `/tablist` desde un menú propio con vista previa en vivo, y queda guardado en el servidor.
+Mod de Fabric (Minecraft 1.21.1) para personalizar el Tab al máximo: header y footer con varias líneas, rango de cada jugador con Chaos Ranks, ping, degradados, fade, arcoíris, animaciones por letra, fondos detrás del texto, iconos y badges en pixel art (como los de Chaos Ranks), datos del servidor (TPS, RAM, CPU…) y del cliente (FPS, RAM, hora). Todo se edita **en caliente** con `/tablist` desde un menú propio con vista previa en vivo, y queda guardado en el servidor.
 
 Es **híbrido**:
 - **Solo en el servidor** ya funciona con clientes vanilla: el servidor monta el Tab y lo manda por los paquetes normales (header, footer y nombre de cada jugador), con las animaciones al ritmo de `updateTicks`.
@@ -21,11 +21,10 @@ Lo que solo se ve con el mod (marcado con ★ en el editor) en vanilla simplemen
 
 ## El editor
 
-Pestañas a la izquierda y el Tab en vivo a la derecha (con tus jugadores reales y jugadores de ejemplo con pings, modos y grupos distintos). Debajo de la vista previa: **Vista mod / vanilla** (para ver lo que ven los que no tienen el mod), **▶** (repite la animación de apertura) y cuántos jugadores de ejemplo mostrar.
+Pestañas a la izquierda y el Tab en vivo a la derecha (con tus jugadores reales y jugadores de ejemplo con pings y modos distintos). Debajo de la vista previa: **Vista mod / vanilla** (para ver lo que ven los que no tienen el mod), **▶** (repite la animación de apertura) y cuántos jugadores de ejemplo mostrar.
 
-- **General**: activar, nombre del servidor, refresco para vanilla, orden (grupo, rango, nombre, ping, modo, mundo, equipo), orden con equipos para vanilla, espectadores al final.
+- **General**: activar, nombre del servidor, refresco para vanilla, orden (rango, nombre, ping, modo, mundo, equipo), espectadores al final.
 - **Header / Footer**: una línea por fila.
-- **Grupos**: cada grupo tiene condición, prioridad y prefijo / nombre / sufijo.
 - **Jugadores**: cambios para un jugador concreto, u ocultarlo.
 - **Ping**: barras, número, ambos, solo número u oculto; formato del número, sufijo para vanilla y colores por umbral.
 - **Diseño**: fondo en degradado, borde de dos colores animado, esquinas, colores de fila (alterna y la tuya), alto de fila, márgenes, columnas, escala, cabezas, sombra, animación al abrir (caída, fundido, deslizar, zoom), estilo del marcador…
@@ -68,29 +67,25 @@ Estilo MiniMessage. `</>` cierra la última etiqueta; `\<` escribe un `<`.
 
 Servidor: `{player}` `{ping}` `{online}` `{max_players}` `{server_name}` `{motd}` `{version}` `{tps}` `{mspt}` `{ram}` `{ram_pct}` `{ram_used}` `{ram_max}` `{cpu}` `{uptime}` `{date}` `{time}` `{day}` `{world_time}` `{weather}` `{weather_icon}`.
 
-Jugador: `{world}` `{dimension}` `{biome}` `{x}` `{y}` `{z}` `{health}` `{max_health}` `{food}` `{level}` `{gamemode}` `{deaths}` `{kills}` `{mob_kills}` `{playtime}` `{afk}` `{op}` `{team}` `{group}`.
+Jugador: `{world}` `{dimension}` `{biome}` `{x}` `{y}` `{z}` `{health}` `{max_health}` `{food}` `{level}` `{gamemode}` `{deaths}` `{kills}` `{mob_kills}` `{playtime}` `{afk}` `{op}` `{team}`.
 
 Cliente (★): `{fps}` `{client_ram}` `{client_ram_pct}` `{client_ram_used}` `{client_ram_max}` `{my_ping}` `{local_time}` `{local_time_s}` `{local_date}`. Sin el mod salen como el texto de "Texto sin mod" (`-`), salvo la hora y el ping, que usan los del servidor.
 
 Animaciones: `{anim:nombre}`.
 
-## Grupos
+## Formato de cada fila
 
-El formato de cada fila es `prefijo + nombre + sufijo` del primer grupo (de más prioridad) cuya condición cumple el jugador:
-
-`default` · `op` · `permission:<nivel>` · `rank:<id de Chaos Ranks>` · `gamemode:<modo>` · `dimension:<id>` · `team:<equipo>` · `tag:<tag>` · `player:<nombre>`. `!` delante la niega y varias separadas por coma tienen que cumplirse todas (`op,gamemode:creative`). Siempre existe un grupo `default`.
+Cada fila es `prefijo + nombre + sufijo`. Por defecto: el badge del rango de Chaos Ranks (si lo tiene) y el nombre en blanco. No se edita desde el menú: los rangos los gestiona Chaos Ranks. Se puede cambiar a mano en `tablist.json` (`row`) y, para un jugador concreto, en la pestaña **Jugadores**.
 
 ## Chaos Ranks (opcional)
 
-Si Chaos Ranks está instalado se activan `{rank}` (el badge del rango, en la versión compacta del Tab), `{rank_name}`, `{rank_id}`, `{rank_priority}`, `{has_rank}`, la condición `rank:<id>` y el orden por rango. Los clientes vanilla ven el rango como `[NOMBRE]`. Se enlaza por reflexión, así que no hace falta para compilar ni para jugar.
+Si Chaos Ranks está instalado se activan `{rank}` (el badge del rango, en la versión compacta del Tab), `{rank_name}`, `{rank_id}`, `{rank_priority}`, `{has_rank}` y el orden por rango. Los clientes vanilla ven el rango como `[NOMBRE]`. Se enlaza por reflexión, así que no hace falta para compilar ni para jugar.
 
 ## Datos
 
 En `<mundo>/chaostablist/`:
 - `tablist.json`: toda la configuración (se puede editar a mano y recargar con `/tablist reload`).
 - `icons/*.png`: imágenes propias (máx. 64, 256 KB cada una). Se mandan a los clientes con el mod y se usan con `<icon:custom/nombre>` o `<img:nombre:ancho:alto>`.
-
-Para ordenar el Tab de los clientes vanilla se usan equipos del marcador `ctab_*` (no se toca a quien ya está en otro equipo, y no se usan si Chaos Ranks está instalado). Se puede desactivar en General.
 
 ## Desarrollo
 

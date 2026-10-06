@@ -58,7 +58,7 @@ import net.minecraft.world.scores.DisplaySlot;
 public class TablistEditorScreen extends Screen {
 
 	private enum Tab {
-		GENERAL, HEADER, FOOTER, GROUPS, PLAYERS, PING, LAYOUT, ANIMATIONS, ICONS, HELP;
+		GENERAL, HEADER, FOOTER, PLAYERS, PING, LAYOUT, ANIMATIONS, ICONS, HELP;
 
 		Component title() {
 			return Lang.tr("tab." + name().toLowerCase());
@@ -66,7 +66,7 @@ public class TablistEditorScreen extends Screen {
 
 		/** Pestañas con campos de plantilla: llevan la barra de insertar. */
 		boolean text() {
-			return this == HEADER || this == FOOTER || this == GROUPS || this == PLAYERS || this == PING
+			return this == HEADER || this == FOOTER || this == PLAYERS || this == PING
 					|| this == ANIMATIONS;
 		}
 	}
@@ -102,7 +102,6 @@ public class TablistEditorScreen extends Screen {
 	private int rowsScroll;
 	private int rowsMax;
 	private int listScroll;
-	private int selectedGroup;
 	private int selectedAnimation;
 	@Nullable private UUID selectedPlayer;
 	private boolean autoApply;
@@ -442,7 +441,6 @@ public class TablistEditorScreen extends Screen {
 			case GENERAL -> initGeneral(c);
 			case HEADER -> initLines(c, true);
 			case FOOTER -> initLines(c, false);
-			case GROUPS -> initGroups(c);
 			case PLAYERS -> initPlayers(c);
 			case PING -> initPing(c);
 			case LAYOUT -> initLayout(c);
@@ -532,11 +530,10 @@ public class TablistEditorScreen extends Screen {
 		rows.add(stepper(Lang.tr("field.update_ticks"), () -> draft.updateTicks, v -> draft.updateTicks = v, 1, 200, 1));
 		rows.add(textRow(Lang.tr("field.client_fallback"), () -> draft.clientOnlyFallback, v -> draft.clientOnlyFallback = v, false));
 		rows.add(textRow(Lang.tr("field.sort_order"), () -> draft.sorting.order, v -> draft.sorting.order = v, false));
-		String[] keys = {"group", "rank", "name", "ping", "gamemode", "world", "team"};
-		rows.add(row((x, y, rw) -> sortButtons(x, y, rw, keys, 0, 4)));
-		rows.add(row((x, y, rw) -> sortButtons(x, y, rw, keys, 4, 7)));
+		String[] keys = {"rank", "name", "ping", "gamemode", "world", "team"};
+		rows.add(row((x, y, rw) -> sortButtons(x, y, rw, keys, 0, 3)));
+		rows.add(row((x, y, rw) -> sortButtons(x, y, rw, keys, 3, 6)));
 		rows.add(hintRow(Lang.tr("screen.hint.general"), w));
-		rows.add(toggle(Lang.tr("field.vanilla_teams"), () -> draft.sorting.vanillaTeams, v -> draft.sorting.vanillaTeams = v));
 		rows.add(toggle(Lang.tr("field.spectators_last"), () -> draft.layout.spectatorsLast, v -> draft.layout.spectatorsLast = v));
 		rows.add(hintRow(chaosRanks ? Lang.tr("screen.chaosranks_on") : Lang.tr("screen.chaosranks_off"), w));
 		rows(rows, c[0], c[1], c[2], c[3]);
@@ -665,85 +662,6 @@ public class TablistEditorScreen extends Screen {
 		return new int[] {c[0] + LIST_W + 5, c[1], c[2] - LIST_W - 5, c[3]};
 	}
 
-	private void initGroups(int[] c) {
-		List<TabConfig.GroupDef> groups = draft.groups;
-		selectedGroup = Mth.clamp(selectedGroup, 0, Math.max(0, groups.size() - 1));
-		List<Component> items = new ArrayList<>();
-		for (TabConfig.GroupDef g : groups) {
-			items.add(Component.literal(g.id).append(Component.literal(" " + g.priority).withColor(0x7A6A55)));
-		}
-		int[] f = sideList(c, items, selectedGroup, i -> {
-			selectedGroup = i;
-			rowsScroll = 0;
-			rebuildWidgets();
-		}, () -> {
-			TabConfig.GroupDef g = TabConfig.GroupDef.of(freeId("grupo", groups.stream().map(d -> d.id).toList()), 10,
-					"permission:1", "<icon:star:#55FFFF> ", "<aqua>{player}", "");
-			groups.add(g);
-			groups.sort((a, b) -> Integer.compare(b.priority, a.priority));
-			selectedGroup = groups.indexOf(g);
-			changed();
-			rebuildWidgets();
-		}, () -> {
-			if (groups.size() > 1) {
-				groups.remove(selectedGroup);
-				selectedGroup = Math.max(0, selectedGroup - 1);
-				changed();
-				rebuildWidgets();
-			}
-		});
-		if (groups.isEmpty()) {
-			return;
-		}
-		TabConfig.GroupDef g = groups.get(selectedGroup);
-		List<Row> rows = new ArrayList<>();
-		rows.add(textRow(Lang.tr("field.id"), () -> g.id, v -> g.id = v.toLowerCase().replaceAll("[^a-z0-9_\\-]", "_"), false));
-		rows.add(stepper(Lang.tr("field.priority"), () -> g.priority, v -> {
-			g.priority = v;
-			groups.sort((a, b) -> Integer.compare(b.priority, a.priority));
-			selectedGroup = groups.indexOf(g);
-		}, -999, 999, 5));
-		rows.add(row((x, y, w) -> {
-			int lw = labelW(w);
-			label(x, y + 4, Lang.tr("field.condition"), lw - 4);
-			field(x + lw, y, w - lw - 16, 128, g.condition, false, v -> g.condition = v);
-			String[] presets = presets();
-			button(x + w - 14, y, 14, FH, Component.literal("▾"), () -> {
-				int i = 0;
-				for (int k = 0; k < presets.length; k++) {
-					if (presets[k].equals(g.condition)) {
-						i = k + 1;
-					}
-				}
-				g.condition = presets[i % presets.length];
-				changed();
-				rebuildWidgets();
-			});
-		}));
-		rows.add(textRow(Lang.tr("field.prefix"), () -> g.prefix, v -> g.prefix = v, true));
-		rows.add(textRow(Lang.tr("field.name"), () -> g.name, v -> g.name = v, true));
-		rows.add(textRow(Lang.tr("field.suffix"), () -> g.suffix, v -> g.suffix = v, true));
-		rows.add(previewRow(() -> g.prefix + g.name + g.suffix, () -> {
-			Map<String, String> v = new HashMap<>(selfValues());
-			v.put("group", g.id);
-			return v;
-		}));
-		rows.add(hintRow(Lang.tr("screen.hint.condition"), f[2]));
-		rows.add(hintRow(Lang.tr("screen.hint.condition2"), f[2]));
-		rows.add(hintRow(Lang.tr("screen.hint.groups_saved"), f[2]));
-		rows(rows, f[0], f[1], f[2], f[3]);
-	}
-
-	private String[] presets() {
-		List<String> p = new ArrayList<>(List.of("default", "op", "permission:1", "permission:2", "permission:4",
-				"gamemode:creative", "gamemode:spectator", "dimension:the_nether", "dimension:the_end", "team:staff", "tag:vip"));
-		if (chaosRanks) {
-			p.add("rank:vip");
-			p.add("rank:admin");
-		}
-		return p.toArray(new String[0]);
-	}
-
 	private void initPlayers(int[] c) {
 		// Jugadores conectados + los que ya tienen cambios guardados.
 		LinkedHashMap<UUID, String> people = new LinkedHashMap<>();
@@ -793,7 +711,7 @@ public class TablistEditorScreen extends Screen {
 		rows.add(textRow(Lang.tr("field.suffix"), () -> current == null || current.suffix == null ? "" : current.suffix,
 				v -> o.get().suffix = v.isEmpty() ? null : v, true));
 		UUID pid = selectedPlayer;
-		rows.add(previewRow(() -> draft.rowTemplate(ClientState.player(pid).get("group"), key), () -> {
+		rows.add(previewRow(() -> draft.rowTemplate(key), () -> {
 			Map<String, String> v = new HashMap<>(ClientState.player(pid));
 			v.putIfAbsent("player", name);
 			return v;

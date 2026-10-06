@@ -1,6 +1,6 @@
 # Your tab list, exactly the way you want it.
 
-**Chaos Tablist** lets you customize **everything** in the tab list: animated headers and footers, per-group player formats, gradients, rainbow and fade effects, pixel-art icons and badges, ping colors, server stats (TPS, RAM, CPU…) and client stats (FPS, RAM, clock). Edit it all **in-game** with `/tablist` from a custom editor with a **live preview**: changes apply to the whole server instantly and are saved per world.
+**Chaos Tablist** lets you customize **everything** in the tab list: animated headers and footers, Chaos Ranks badges on every player, gradients, rainbow and fade effects, pixel-art icons and badges, ping colors, server stats (TPS, RAM, CPU…) and client stats (FPS, RAM, clock). Edit it all **in-game** with `/tablist` from a custom editor with a **live preview**: changes apply to the whole server instantly and are saved per world.
 
 Built for **Fabric 1.21.1**.
 
@@ -19,7 +19,7 @@ Built for **Fabric 1.21.1**.
 ### 🎨 A real in-game editor
 Type `/tablist` and a custom editor opens with tabs on the left and your **live tab list** on the right (with your real players plus example players). Switch the preview to **vanilla view** to see what players without the mod get.
 
-- **Header / Footer**, **Groups**, **Players**, **Ping**, **Design**, **Animations**, **Icons** and a **Help** tab listing every placeholder with its current value.
+- **Header / Footer**, **Players**, **Ping**, **Design**, **Animations**, **Icons** and a **Help** tab listing every placeholder with its current value.
 - One click inserts **colors**, **effects**, **icons** and **placeholders** right at your cursor. Templates are syntax-highlighted.
 - **Save** applies it to everyone instantly, or turn on **Auto** to apply as you type.
 
@@ -38,11 +38,11 @@ MiniMessage-style tags: `<#FF5555>`, `<gradient:#f00:#00f:speed=1>`, `<rainbow:1
 ### 📊 Placeholders
 TPS, MSPT, RAM, CPU, uptime, online / max players, ping, world, biome, coordinates, health, food, level, game mode, kills, deaths, playtime, AFK, team, date and time… plus client-side **FPS**, **RAM** and **local time**. Frame-based animations with `{anim:name}`.
 
-### 👥 Groups & sorting
-Each group has a **condition** (`op`, `permission:3`, `gamemode:creative`, `dimension:the_nether`, `team:red`, `tag:vip`, `rank:vip`…), a priority and its own prefix, name and suffix. Sort by group, rank, name, ping, game mode, world or team.
+### 👥 Ranks & sorting
+Each row shows the player's **Chaos Ranks** badge next to their name, and you can give single players their own format. Sort by rank, name, ping, game mode, world or team.
 
 ### 🤝 Chaos Ranks integration (optional)
-With **Chaos Ranks** installed you get the `{rank}` badge, rank conditions and sorting by rank priority.
+With **Chaos Ranks** installed you get the `{rank}` badge on every row and sorting by rank priority.
 
 ---
 

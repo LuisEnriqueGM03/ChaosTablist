@@ -89,7 +89,7 @@ public final class SelfTest {
 			}
 			case 100 -> shot(mc, "editor_general");
 			default -> {
-				int[] tabs = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+				int[] tabs = {1, 2, 3, 4, 5, 6, 7, 8};
 				for (int i = 0; i < tabs.length; i++) {
 					int base = 105 + i * 12;
 					if (ticks == base) {
@@ -165,7 +165,7 @@ public final class SelfTest {
 				Component c = Evaluator.toComponent(Evaluator.eval(line, ctx));
 				ChaosTablist.LOGGER.info("[selftest] vanilla: {}", c.getString());
 			}
-			String row = cfg.rowTemplate(values.get("group"), p.getStringUUID()) + cfg.ping.vanillaSuffix;
+			String row = cfg.rowTemplate(p.getStringUUID()) + cfg.ping.vanillaSuffix;
 			ChaosTablist.LOGGER.info("[selftest] vanilla fila: {}", Evaluator.toComponent(Evaluator.eval(row, ctx)).getString());
 			ChaosTablist.LOGGER.info("[selftest] valores: {}", values);
 		});

@@ -41,13 +41,11 @@ public class TabConfig {
 			"{anim:footer}",
 			""));
 
-	public List<GroupDef> groups = new ArrayList<>(List.of(
-			GroupDef.of("admin", 100, "op",
-					"<if:{has_rank}:eq:true>{rank} <else><icon:crown:#FFD700> </if>",
-					"<gradient:#FFD700:#FF8C00:speed=0.5>{player}</gradient>", ""),
-			GroupDef.of("default", 0, "default",
-					"<if:{has_rank}:eq:true>{rank} </if>",
-					"<white>{player}", "")));
+	/**
+	 * Formato de cada fila. No sale en el editor: el rango de cada jugador lo pone Chaos Ranks ({rank}). Se puede
+	 * cambiar a mano en el JSON.
+	 */
+	public RowFormat row = new RowFormat();
 
 	/** Cambios por jugador (UUID → formato propio). */
 	public Map<String, PlayerOverride> players = new LinkedHashMap<>();
@@ -61,37 +59,10 @@ public class TabConfig {
 					"<gray>Escribe <yellow>/help</yellow> si te pierdes",
 					"<rainbow:1>¡Gracias por jugar!</rainbow>")));
 
-	public static class GroupDef {
-		public String id = "group";
-		/** Más alto = se comprueba antes (y va antes en el Tab). */
-		public int priority = 50;
-		/**
-		 * Quién entra: default · op · permission:&lt;nivel&gt; · rank:&lt;id de Chaos Ranks&gt; · gamemode:&lt;modo&gt; ·
-		 * dimension:&lt;id&gt; · team:&lt;equipo&gt; · player:&lt;nombre&gt;. Varias separadas por coma = todas a la vez.
-		 */
-		public String condition = "default";
-		public String prefix = "";
-		public String name = "{player}";
+	public static class RowFormat {
+		public String prefix = "<if:{has_rank}:eq:true>{rank} </if>";
+		public String name = "<white>{player}";
 		public String suffix = "";
-
-		public static GroupDef of(String id, int priority, String condition, String prefix, String name, String suffix) {
-			GroupDef g = new GroupDef();
-			g.id = id;
-			g.priority = priority;
-			g.condition = condition;
-			g.prefix = prefix;
-			g.name = name;
-			g.suffix = suffix;
-			return g;
-		}
-
-		public GroupDef copy() {
-			return of(id, priority, condition, prefix, name, suffix);
-		}
-
-		public String template() {
-			return prefix + name + suffix;
-		}
 	}
 
 	public static class PlayerOverride {
@@ -171,10 +142,8 @@ public class TabConfig {
 	}
 
 	public static class Sorting {
-		/** Claves en orden: group, rank, name, ping, gamemode, world, team. */
-		public String order = "group,rank,name";
-		/** Ordenar a los clientes vanilla con equipos del marcador (solo si Chaos Ranks no está). */
-		public boolean vanillaTeams = true;
+		/** Claves en orden: rank, name, ping, gamemode, world, team. */
+		public String order = "rank,name";
 	}
 
 	public static class Animation {
@@ -200,25 +169,11 @@ public class TabConfig {
 
 	// ---------------------------------------------------------------------------------------------
 
-	@Nullable
-	public GroupDef group(@Nullable String id) {
-		for (GroupDef g : groups) {
-			if (g.id.equals(id)) {
-				return g;
-			}
-		}
-		return null;
-	}
-
-	/** Plantilla de la fila de un jugador: la de su grupo con lo que tenga cambiado a mano. */
-	public String rowTemplate(@Nullable String groupId, @Nullable String uuid) {
-		GroupDef g = group(groupId);
-		if (g == null) {
-			g = group("default");
-		}
-		String prefix = g == null ? "" : g.prefix;
-		String name = g == null ? "{player}" : g.name;
-		String suffix = g == null ? "" : g.suffix;
+	/** Plantilla de la fila de un jugador: el formato general con lo que tenga cambiado a mano. */
+	public String rowTemplate(@Nullable String uuid) {
+		String prefix = row.prefix;
+		String name = row.name;
+		String suffix = row.suffix;
 		PlayerOverride o = uuid == null ? null : players.get(uuid);
 		if (o != null) {
 			prefix = o.prefix != null ? o.prefix : prefix;
@@ -263,25 +218,12 @@ public class TabConfig {
 		clientOnlyFallback = clip(clientOnlyFallback, 16);
 		header = lines(header);
 		footer = lines(footer);
-		if (groups == null) {
-			groups = new ArrayList<>();
+		if (row == null) {
+			row = new RowFormat();
 		}
-		groups.removeIf(g -> g == null);
-		if (groups.size() > 64) {
-			groups = new ArrayList<>(groups.subList(0, 64));
-		}
-		for (GroupDef g : groups) {
-			g.id = clip(g.id, 32).toLowerCase().replaceAll("[^a-z0-9_\\-]", "_");
-			g.priority = Mth.clamp(g.priority, -999, 999);
-			g.condition = clip(g.condition, 128);
-			g.prefix = clip(g.prefix, MAX_TEMPLATE);
-			g.name = clip(g.name, MAX_TEMPLATE);
-			g.suffix = clip(g.suffix, MAX_TEMPLATE);
-		}
-		if (groups.stream().noneMatch(g -> g.condition.trim().equals("default"))) {
-			groups.add(GroupDef.of("default", -999, "default", "", "{player}", ""));
-		}
-		groups.sort((a, b) -> Integer.compare(b.priority, a.priority));
+		row.prefix = clip(row.prefix, MAX_TEMPLATE);
+		row.name = clip(row.name, MAX_TEMPLATE);
+		row.suffix = clip(row.suffix, MAX_TEMPLATE);
 		if (players == null) {
 			players = new LinkedHashMap<>();
 		}
@@ -323,6 +265,11 @@ public class TabConfig {
 			sorting = new Sorting();
 		}
 		sorting.order = clip(sorting.order, 128);
+		// "group" venía de cuando había grupos.
+		List<String> order = new ArrayList<>(List.of(sorting.order.split(",")));
+		order.replaceAll(String::trim);
+		order.removeIf(k -> k.isEmpty() || k.equalsIgnoreCase("group"));
+		sorting.order = String.join(",", order);
 		if (animations == null) {
 			animations = new LinkedHashMap<>();
 		}

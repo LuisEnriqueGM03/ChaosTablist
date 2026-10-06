@@ -136,26 +136,23 @@ public final class TabRenderer {
 		return list;
 	}
 
-	/** Jugadores de ejemplo para la vista previa: cada uno en un grupo, con pings y modos variados. */
+	/** Jugadores de ejemplo para la vista previa, con pings y modos variados. */
 	public static List<Entry> fakes(TabConfig cfg, int count) {
 		List<Entry> list = new ArrayList<>();
 		for (int i = 0; i < Math.min(count, MAX_FAKES); i++) {
 			String name = FAKE_NAMES[i];
 			UUID id = UUID.nameUUIDFromBytes(("chaostablist:" + name).getBytes(java.nio.charset.StandardCharsets.UTF_8));
 			Map<String, String> v = new HashMap<>();
-			TabConfig.GroupDef group = cfg.groups.isEmpty() ? null : cfg.groups.get(i % cfg.groups.size());
 			int ping = FAKE_PINGS[i % FAKE_PINGS.length];
 			GameType mode = i == 5 ? GameType.SPECTATOR : i == 3 ? GameType.CREATIVE : GameType.SURVIVAL;
 			v.put("player", name);
 			v.put("ping", String.valueOf(ping));
-			v.put("group", group == null ? "default" : group.id);
-			v.put("group_priority", String.valueOf(group == null ? 0 : group.priority));
 			v.put("has_rank", "false");
 			v.put("world", i % 3 == 0 ? "overworld" : i % 3 == 1 ? "the_nether" : "the_end");
 			v.put("gamemode", mode.getName());
 			v.put("health", String.valueOf(20 - i));
 			v.put("level", String.valueOf(i * 7));
-			v.put("op", String.valueOf(group != null && group.condition.contains("op")));
+			v.put("op", String.valueOf(i == 0));
 			list.add(new Entry(id, name, net.minecraft.client.resources.DefaultPlayerSkin.get(id), mode, ping, v, false, null));
 		}
 		return list;
@@ -165,7 +162,6 @@ public final class TabRenderer {
 		Comparator<Entry> c = Comparator.comparingInt(e -> cfg.layout.spectatorsLast && e.mode() == GameType.SPECTATOR ? 1 : 0);
 		for (String key : cfg.sorting.order.split(",")) {
 			c = switch (key.trim().toLowerCase(Locale.ROOT)) {
-				case "group" -> c.thenComparing(e -> -num(e.values().get("group_priority")));
 				case "rank" -> c.thenComparing(e -> -num(e.values().get("rank_priority")));
 				case "name" -> c.thenComparing(Entry::name, String::compareToIgnoreCase);
 				case "ping" -> c.thenComparingInt(Entry::latency);
@@ -235,7 +231,7 @@ public final class TabRenderer {
 		boolean hearts = objective != null && objective.getRenderType() == ObjectiveCriteria.RenderType.HEARTS;
 		for (Entry e : entries) {
 			ClientContext ctx = new ClientContext(cfg, e.values(), global, time, openedAt, vanillaLook);
-			String template = cfg.rowTemplate(e.values().get("group"), e.id().toString());
+			String template = cfg.rowTemplate(e.id().toString());
 			List<Glyph> name = vanillaLook ? vanillaize(Evaluator.eval(template + cfg.ping.vanillaSuffix, ctx))
 					: Evaluator.eval(template, ctx);
 			if (e.mode() == GameType.SPECTATOR) {

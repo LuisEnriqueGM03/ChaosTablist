@@ -66,7 +66,7 @@ public final class Snippets {
 			new Placeholder("date", "server"), new Placeholder("time", "server"), new Placeholder("day", "server"),
 			new Placeholder("world_time", "server"), new Placeholder("weather", "server"),
 			new Placeholder("weather_icon", "server"), new Placeholder("motd", "server"), new Placeholder("version", "server"),
-			new Placeholder("player", "player"), new Placeholder("ping", "player"), new Placeholder("group", "player"),
+			new Placeholder("player", "player"), new Placeholder("ping", "player"),
 			new Placeholder("world", "player"), new Placeholder("dimension", "player"), new Placeholder("biome", "player"),
 			new Placeholder("x", "player"), new Placeholder("y", "player"), new Placeholder("z", "player"),
 			new Placeholder("health", "player"), new Placeholder("max_health", "player"), new Placeholder("food", "player"),

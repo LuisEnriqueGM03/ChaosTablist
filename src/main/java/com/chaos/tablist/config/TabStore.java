@@ -56,8 +56,7 @@ public final class TabStore {
 		}
 		config = loaded;
 		loadIcons();
-		ChaosTablist.LOGGER.info("Tab cargado: {} grupos, {} animaciones, {} iconos propios", config.groups.size(),
-				config.animations.size(), icons.size());
+		ChaosTablist.LOGGER.info("Tab cargado: {} animaciones, {} iconos propios", config.animations.size(), icons.size());
 	}
 
 	public static void set(TabConfig newConfig) {

@@ -141,10 +141,6 @@ public final class ServerValues {
 		v.put("rank_name", rank == null ? "" : rank.label());
 		v.put("rank_id", rank == null ? "" : rank.id());
 		v.put("rank_priority", String.valueOf(rank == null ? 0 : rank.priority()));
-
-		TabConfig.GroupDef group = Groups.match(server, config, player, rank);
-		v.put("group", group == null ? "" : group.id);
-		v.put("group_priority", String.valueOf(group == null ? 0 : group.priority));
 		return v;
 	}
 

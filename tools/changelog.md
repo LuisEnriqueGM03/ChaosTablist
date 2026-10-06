@@ -2,7 +2,7 @@
 
 First release.
 
-- Full tab list customization: multi-line header and footer, per-group player format (prefix, name, suffix), per-player overrides.
+- Full tab list customization: multi-line header and footer, Chaos Ranks rank badge on every row, per-player overrides (prefix, name, suffix).
 - MiniMessage-style text: hex colors, gradients (static and moving), rainbow, fade, pulse, sparkles, typewriter, marquee, blink, cycling texts, conditions, progress bars, color by ping or by value.
 - Pixel-art icons (162) and Chaos Ranks-style badges usable anywhere in the tab.
 - Placeholders: TPS, MSPT, RAM, CPU, uptime, online, ping, world, biome, coordinates, health, kills, deaths, playtime and more; client-side FPS, RAM and local time.

@@ -8,6 +8,7 @@ import com.chaos.tablist.config.TabStore;
 import com.chaos.tablist.net.TabPayloads;
 import com.chaos.tablist.server.ServerValues;
 import com.chaos.tablist.server.TabServer;
+import com.chaos.tablist.server.TabSorting;
 import com.chaos.tablist.server.TabTicker;
 
 import net.fabricmc.api.ModInitializer;
@@ -42,6 +43,7 @@ public class ChaosTablist implements ModInitializer {
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			ServerValues.markStarted();
 			TabStore.load(server);
+			TabSorting.clear(server);
 		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> TabTicker.stop());
 		ServerTickEvents.END_SERVER_TICK.register(TabTicker::tick);
