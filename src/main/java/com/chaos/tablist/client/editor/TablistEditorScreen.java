@@ -24,6 +24,7 @@ import com.chaos.tablist.client.CustomIcons;
 import com.chaos.tablist.client.RichText;
 import com.chaos.tablist.client.TabRenderer;
 import com.chaos.tablist.config.TabConfig;
+import com.chaos.tablist.mixin.client.EditBoxAccessor;
 import com.chaos.tablist.mixin.client.MultiLineEditBoxAccessor;
 import com.chaos.tablist.net.TabPayloads;
 import com.chaos.tablist.text.Badges;
@@ -1245,6 +1246,7 @@ public class TablistEditorScreen extends Screen {
 			if (popup == Popup.COLOR && hexBox != null && hexOk != null && hexPreview != null) {
 				if (hexBox.mouseClicked(mouseX, mouseY, button)) {
 					setFocused(hexBox);
+					startTextDrag(hexBox, mouseX);
 					return true;
 				}
 				if (hexOk.mouseClicked(mouseX, mouseY, button) || hexPreview.mouseClicked(mouseX, mouseY, button)) {
@@ -1265,6 +1267,9 @@ public class TablistEditorScreen extends Screen {
 			}
 		}
 		if (super.mouseClicked(mouseX, mouseY, button)) {
+			if (button == 0 && getFocused() instanceof EditBox box && box.isMouseOver(mouseX, mouseY)) {
+				startTextDrag(box, mouseX);
+			}
 			return true;
 		}
 		int mx = (int) mouseX;
@@ -1725,8 +1730,9 @@ public class TablistEditorScreen extends Screen {
 	private boolean effectEditorClick(double mouseX, double mouseY, int button) {
 		for (AbstractWidget w : new ArrayList<>(popupWidgets)) {
 			if (w.visible && w.mouseClicked(mouseX, mouseY, button)) {
-				if (w instanceof EditBox) {
-					setFocused(w);
+				if (w instanceof EditBox box) {
+					setFocused(box);
+					startTextDrag(box, mouseX);
 				}
 				return true;
 			}
@@ -1838,13 +1844,85 @@ public class TablistEditorScreen extends Screen {
 			setAlphaFrom(mouseX);
 			return true;
 		}
+		if (dragBox != null && button == 0) {
+			// Seleccionar arrastrando: el inicio se queda donde se hizo clic.
+			dragBox.moveCursorTo(textIndexAt(dragBox, mouseX), true);
+			return true;
+		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		draggingAlpha = false;
+		dragBox = null;
 		return super.mouseReleased(mouseX, mouseY, button);
+	}
+
+	// ----- Seleccionar texto con el ratón en los campos de una línea
+
+	@Nullable private EditBox dragBox;
+	@Nullable private EditBox lastClickBox;
+	private long lastClickBoxAt;
+
+	/** Tras un clic en un campo: empieza a arrastrar; doble clic selecciona la palabra. */
+	private void startTextDrag(EditBox box, double mouseX) {
+		dragBox = box;
+		long now = Util.getMillis();
+		if (box == lastClickBox && now - lastClickBoxAt < 350) {
+			selectWord(box);
+			dragBox = null;
+			lastClickBox = null;
+			return;
+		}
+		lastClickBox = box;
+		lastClickBoxAt = now;
+	}
+
+	/** Posición del texto bajo la x del ratón (fuera del campo, un carácter más allá para desplazarlo). */
+	private int textIndexAt(EditBox box, double mouseX) {
+		String value = box.getValue();
+		int from = Mth.clamp(((EditBoxAccessor) box).chaostablist$displayPos(), 0, value.length());
+		int rel = (int) mouseX - box.getX() - (box.isBordered() ? 4 : 0);
+		if (rel < 0) {
+			return Math.max(0, from - 1);
+		}
+		String visible = font.plainSubstrByWidth(value.substring(from), box.getInnerWidth());
+		if (rel > box.getInnerWidth()) {
+			return Math.min(value.length(), from + visible.length() + 1);
+		}
+		return from + font.plainSubstrByWidth(visible, rel).length();
+	}
+
+	/** Selecciona la palabra (o la etiqueta &lt;...&gt; / el dato {...}) donde está el cursor. */
+	private static void selectWord(EditBox box) {
+		String v = box.getValue();
+		int c = Mth.clamp(box.getCursorPosition(), 0, v.length());
+		int open = v.lastIndexOf('<', Math.max(0, c - 1));
+		int close = v.indexOf('>', Math.max(0, c - 1));
+		int lastClose = v.lastIndexOf('>', Math.max(0, c - 1));
+		if (open >= 0 && close >= 0 && (lastClose < open || lastClose == close) && open < c && c <= close + 1) {
+			box.moveCursorTo(open, false);
+			box.moveCursorTo(close + 1, true);
+			return;
+		}
+		int start = c;
+		while (start > 0 && isWordChar(v.charAt(start - 1))) {
+			start--;
+		}
+		int end = c;
+		while (end < v.length() && isWordChar(v.charAt(end))) {
+			end++;
+		}
+		if (start == end) {
+			return;
+		}
+		box.moveCursorTo(start, false);
+		box.moveCursorTo(end, true);
+	}
+
+	private static boolean isWordChar(char ch) {
+		return Character.isLetterOrDigit(ch) || ch == '_' || ch == '#' || ch == '{' || ch == '}';
 	}
 
 	/** Celdas de iconos: los de la fuente y luego los PNG del servidor. */

@@ -14,12 +14,14 @@ import com.chaos.tablist.config.TabConfig;
 import com.chaos.tablist.text.TextContext;
 import com.google.gson.JsonObject;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.SharedConstants;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.scores.PlayerTeam;
 
 /**
@@ -31,7 +33,7 @@ public final class ServerValues {
 
 	/** Placeholders que solo conoce el cliente (con el mod se resuelven allí). */
 	public static final Set<String> CLIENT_ONLY = Set.of("fps", "client_ram_used", "client_ram_max", "client_ram_pct",
-			"client_ram", "client_cpu", "gpu");
+			"client_ram", "client_cpu", "gpu", "render_distance", "resolution", "client_mods", "local_weekday");
 
 	private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
@@ -99,10 +101,40 @@ public final class ServerValues {
 		g.put("time", now.format(TIME));
 		g.put("chaosranks", String.valueOf(ChaosRanksCompat.present()));
 
+		g.put("is_day", String.valueOf(overworld.isDay()));
+		g.put("moon_phase", String.valueOf(overworld.getMoonPhase() + 1));
+		g.put("difficulty", overworld.getDifficulty().getKey());
+		g.put("view_distance", String.valueOf(server.getPlayerList().getViewDistance()));
+		g.put("sim_distance", String.valueOf(server.getPlayerList().getSimulationDistance()));
+		int entities = 0;
+		int chunks = 0;
+		int worlds = 0;
+		for (ServerLevel level : server.getAllLevels()) {
+			worlds++;
+			chunks += level.getChunkSource().getLoadedChunksCount();
+			for (var ignored : level.getAllEntities()) {
+				entities++;
+			}
+		}
+		g.put("entities", String.valueOf(entities));
+		g.put("chunks", String.valueOf(chunks));
+		g.put("worlds", String.valueOf(worlds));
+		g.put("threads", String.valueOf(Thread.activeCount()));
+		g.put("java_version", System.getProperty("java.version", "?"));
+		g.put("server_mods", String.valueOf(FabricLoader.getInstance().getAllMods().size()));
+		g.put("port", String.valueOf(server.getPort()));
+
+		int staff = 0;
+		int afk = 0;
 		Map<UUID, Map<String, String>> p = new HashMap<>();
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-			p.put(player.getUUID(), playerValues(server, config, player));
+			Map<String, String> values = playerValues(server, config, player);
+			p.put(player.getUUID(), values);
+			staff += "true".equals(values.get("op")) ? 1 : 0;
+			afk += "true".equals(values.get("afk")) ? 1 : 0;
 		}
+		g.put("staff_online", String.valueOf(staff));
+		g.put("afk_online", String.valueOf(afk));
 		global = g;
 		players = p;
 	}
@@ -134,6 +166,31 @@ public final class ServerValues {
 		v.put("op", String.valueOf(server.getPlayerList().isOp(player.getGameProfile())));
 		PlayerTeam team = player.getTeam();
 		v.put("team", team == null ? "" : team.getName());
+		v.put("display_name", player.getDisplayName().getString());
+		v.put("xp", String.valueOf(player.totalExperience));
+		v.put("xp_pct", String.valueOf((int) (player.experienceProgress * 100)));
+		v.put("armor", String.valueOf(player.getArmorValue()));
+		v.put("saturation", String.valueOf((int) player.getFoodData().getSaturationLevel()));
+		v.put("air", String.valueOf(player.getMaxAirSupply() <= 0 ? 100
+				: Math.max(0, player.getAirSupply()) * 100 / player.getMaxAirSupply()));
+		v.put("light", String.valueOf(level.getMaxLocalRawBrightness(player.blockPosition())));
+		v.put("facing", switch (player.getDirection()) {
+			case NORTH -> "N";
+			case SOUTH -> "S";
+			case EAST -> "E";
+			default -> "W";
+		});
+		v.put("chunk_x", String.valueOf(player.chunkPosition().x));
+		v.put("chunk_z", String.valueOf(player.chunkPosition().z));
+		ItemStack held = player.getMainHandItem();
+		v.put("held_item", held.isEmpty() ? "" : held.getHoverName().getString());
+		v.put("language", player.clientInformation().language());
+		v.put("jumps", String.valueOf(player.getStats().getValue(Stats.CUSTOM.get(Stats.JUMP))));
+		v.put("fish", String.valueOf(player.getStats().getValue(Stats.CUSTOM.get(Stats.FISH_CAUGHT))));
+		int walkedCm = player.getStats().getValue(Stats.CUSTOM.get(Stats.WALK_ONE_CM))
+				+ player.getStats().getValue(Stats.CUSTOM.get(Stats.SPRINT_ONE_CM));
+		v.put("walked", String.format(Locale.ROOT, "%.1f km", walkedCm / 100_000f));
+		v.put("since_death", duration(player.getStats().getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_DEATH)) / 20L));
 
 		ChaosRanksCompat.Rank rank = ChaosRanksCompat.rankOf(player);
 		v.put("has_rank", String.valueOf(rank != null));

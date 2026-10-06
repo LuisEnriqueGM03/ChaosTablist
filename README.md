@@ -32,7 +32,7 @@ Pestañas a la izquierda y el Tab en vivo a la derecha (con tus jugadores reales
 - **Iconos**: los 162 iconos (y los PNG propios); clic para copiar.
 - **Ayuda**: todos los placeholders con su valor actual y todas las etiquetas con un ejemplo en vivo.
 
-Los botones **Color / Efecto / Icono / Dato** meten la etiqueta en el cursor del último campo usado. En **Color**, **Vista previa** prueba el color en el Tab en vivo y solo se queda si pulsas **OK**. En **Efecto**, el botón **✎** de cada efecto abre su editor: colores, velocidad y demás opciones, y si va con un texto o con un icono, con vista previa antes de insertarlo. Todas las pestañas y botones tienen un tooltip que explica qué hacen. Los campos de plantilla colorean las etiquetas en morado y los placeholders en celeste. **Guardar** lo aplica a todo el servidor al momento; con **Auto: Sí** se guarda solo mientras escribes.
+Los botones **Color / Efecto / Icono / Dato** meten la etiqueta en el cursor del último campo usado. En **Color**, **Vista previa** prueba el color en el Tab en vivo y solo se queda si pulsas **OK**. En **Efecto**, el botón **✎** de cada efecto abre su editor: colores, velocidad y demás opciones, y si va con un texto o con un icono, con vista previa antes de insertarlo. Todas las pestañas y botones tienen un tooltip que explica qué hacen. En los campos se puede seleccionar texto arrastrando el ratón (doble clic selecciona una palabra o una etiqueta entera) y copiar, cortar y pegar con Ctrl+C / Ctrl+X / Ctrl+V. Los campos de plantilla colorean las etiquetas en morado y los placeholders en celeste. **Guardar** lo aplica a todo el servidor al momento; con **Auto: Sí** se guarda solo mientras escribes.
 
 ## Formato de texto
 
@@ -65,11 +65,11 @@ Estilo MiniMessage. `</>` cierra la última etiqueta; `\<` escribe un `<`.
 
 ## Placeholders
 
-Servidor: `{player}` `{ping}` `{online}` `{max_players}` `{server_name}` `{motd}` `{version}` `{tps}` `{mspt}` `{ram}` `{ram_pct}` `{ram_used}` `{ram_max}` `{cpu}` `{uptime}` `{date}` `{time}` `{day}` `{world_time}` `{weather}` `{weather_icon}`.
+Servidor: `{player}` `{ping}` `{online}` `{max_players}` `{server_name}` `{motd}` `{version}` `{tps}` `{mspt}` `{ram}` `{ram_pct}` `{ram_used}` `{ram_max}` `{cpu}` `{uptime}` `{date}` `{time}` `{day}` `{world_time}` `{weather}` `{weather_icon}` `{is_day}` `{moon_phase}` `{staff_online}` `{afk_online}` `{difficulty}` `{view_distance}` `{sim_distance}` `{entities}` `{chunks}` `{worlds}` `{threads}` `{java_version}` `{server_mods}` `{port}`.
 
-Jugador: `{world}` `{dimension}` `{biome}` `{x}` `{y}` `{z}` `{health}` `{max_health}` `{food}` `{level}` `{gamemode}` `{deaths}` `{kills}` `{mob_kills}` `{playtime}` `{afk}` `{op}` `{team}`.
+Jugador: `{world}` `{dimension}` `{biome}` `{x}` `{y}` `{z}` `{health}` `{max_health}` `{food}` `{level}` `{gamemode}` `{deaths}` `{kills}` `{mob_kills}` `{playtime}` `{afk}` `{op}` `{team}` `{display_name}` `{xp}` `{xp_pct}` `{armor}` `{saturation}` `{air}` `{light}` `{facing}` `{chunk_x}` `{chunk_z}` `{held_item}` `{language}` `{jumps}` `{fish}` `{walked}` `{since_death}`.
 
-Cliente (★): `{fps}` `{client_ram}` `{client_ram_pct}` `{client_ram_used}` `{client_ram_max}` `{my_ping}` `{local_time}` `{local_time_s}` `{local_date}`. Sin el mod salen como el texto de "Texto sin mod" (`-`), salvo la hora y el ping, que usan los del servidor.
+Cliente (★): `{fps}` `{client_ram}` `{client_ram_pct}` `{client_ram_used}` `{client_ram_max}` `{my_ping}` `{local_time}` `{local_time_s}` `{local_date}` `{local_weekday}` `{render_distance}` `{resolution}` `{gpu}` `{client_mods}`. Sin el mod salen como el texto de "Texto sin mod" (`-`), salvo la hora y el ping, que usan los del servidor.
 
 Animaciones: `{anim:nombre}`.
 

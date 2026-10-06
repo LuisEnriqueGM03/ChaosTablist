@@ -2,16 +2,22 @@ package com.chaos.tablist.client;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import com.chaos.tablist.server.ServerValues;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 
-/** Placeholders que solo conoce el cliente: FPS, su RAM, su ping, su hora. Se recalculan 4 veces por segundo. */
+/**
+ * Placeholders que solo conoce el cliente: FPS, su RAM, su ping, su hora, distancia de render, resolución,
+ * gráfica... Se recalculan 4 veces por segundo.
+ */
 public final class ClientValues {
 
 	private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -53,6 +59,25 @@ public final class ClientValues {
 			ping = info == null ? 0 : info.getLatency();
 		}
 		v.put("my_ping", String.valueOf(ping));
+		v.put("render_distance", String.valueOf(mc.options.getEffectiveRenderDistance()));
+		v.put("resolution", mc.getWindow().getWidth() + "x" + mc.getWindow().getHeight());
+		v.put("client_mods", String.valueOf(FabricLoader.getInstance().getAllMods().size()));
+		v.put("gpu", gpu());
+		Locale locale = Locale.forLanguageTag(mc.options.languageCode.replace('_', '-'));
+		String day = now.getDayOfWeek().getDisplayName(TextStyle.FULL, locale);
+		v.put("local_weekday", day.isEmpty() ? day : day.substring(0, 1).toUpperCase(locale) + day.substring(1));
 		return v;
+	}
+
+	private static String gpu;
+
+	/** Nombre corto de la tarjeta gráfica (sin "/PCIe/SSE2" y demás). */
+	private static String gpu() {
+		if (gpu == null) {
+			String r = com.mojang.blaze3d.platform.GlUtil.getRenderer();
+			int cut = r.indexOf('/');
+			gpu = (cut > 0 ? r.substring(0, cut) : r).trim();
+		}
+		return gpu;
 	}
 }
