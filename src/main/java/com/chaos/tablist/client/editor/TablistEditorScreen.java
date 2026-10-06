@@ -1,7 +1,9 @@
 package com.chaos.tablist.client.editor;
 
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -145,6 +147,18 @@ public class TablistEditorScreen extends Screen {
 	private long lastLineClickAt;
 	private long linesHoverSince;
 
+	// Deshacer / rehacer (Ctrl+Z / Ctrl+Y): copias de toda la configuración. Lo que se escribe seguido (sin
+	// parar más de HISTORY_PAUSE ms) cuenta como un solo paso.
+	private static final int HISTORY_MAX = 100;
+	private static final long HISTORY_PAUSE = 700;
+	private final Deque<String> undoStack = new ArrayDeque<>();
+	private final Deque<String> redoStack = new ArrayDeque<>();
+	/** La configuración antes de la tanda de cambios en curso. */
+	private String stableJson;
+	private boolean editBurst;
+	private long lastChangeAt;
+	private boolean suppressHistory;
+
 	// Selector de color.
 	private int pickRgb = 0xFFFFFF;
 	private int pickAlpha = 255;
@@ -200,6 +214,7 @@ public class TablistEditorScreen extends Screen {
 		this.chaosRanks = chaosRanks;
 		this.original = config.copy();
 		this.draft = config.copy();
+		this.stableJson = draft.toJson();
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -536,15 +551,21 @@ public class TablistEditorScreen extends Screen {
 		int bx = M;
 		bx += tip(fit(bx, by, Lang.tr("button.save"), this::save), "button.save.tip").getWidth() + 2;
 		bx += tip(fit(bx, by, Lang.tr("button.discard"), () -> {
+			checkpoint();
 			draft = original.copy();
+			settleHistory();
 			dirty = false;
 			TabRenderer.invalidate();
 			rebuildWidgets();
 		}), "button.discard.tip").getWidth() + 2;
 		bx += tip(fit(bx, by, Lang.tr("button.defaults"), () -> {
+			checkpoint();
 			draft = new TabConfig();
 			draft.sanitize();
+			suppressHistory = true;
 			changed();
+			suppressHistory = false;
+			settleHistory();
 			rebuildWidgets();
 		}), "button.defaults.tip").getWidth() + 2;
 		tip(fit(bx, by, Lang.tr("button.auto", Lang.yesNo(autoApply)), () -> {
@@ -1061,12 +1082,14 @@ public class TablistEditorScreen extends Screen {
 			return;
 		}
 		String hex = pickedHex();
+		suppressHistory = true;
 		if (colorTarget != null) {
 			colorTarget.accept(hex);
 		} else if (previewBox != null && previewBoxValue != null) {
 			restorePreviewBox();
 			previewBox.insertText(colorTag(hex, previewBox.getHighlighted()));
 		}
+		suppressHistory = false;
 		TabRenderer.invalidate();
 	}
 
@@ -1085,11 +1108,13 @@ public class TablistEditorScreen extends Screen {
 			return;
 		}
 		colorPreviewing = false;
+		suppressHistory = true;
 		if (colorTarget != null && colorOriginal != null) {
 			colorTarget.accept(colorOriginal);
 		} else {
 			restorePreviewBox();
 		}
+		suppressHistory = false;
 		previewBox = null;
 		previewBoxValue = null;
 		TabRenderer.invalidate();
@@ -1162,11 +1187,11 @@ public class TablistEditorScreen extends Screen {
 
 	/** Si hay texto seleccionado, el efecto lo envuelve en lugar de meter la palabra de ejemplo. */
 	private static String wrap(String snippet, String selected) {
-		if (selected == null || selected.isEmpty() || !snippet.contains("texto")) {
+		if (selected == null || selected.isEmpty() || !snippet.contains("text")) {
 			return snippet;
 		}
-		return snippet.replace("texto que se desplaza", "texto")
-				.replaceFirst("texto", java.util.regex.Matcher.quoteReplacement(selected));
+		return snippet.replace("scrolling text", "text")
+				.replaceFirst("text", java.util.regex.Matcher.quoteReplacement(selected));
 	}
 
 	@Override
@@ -1185,6 +1210,58 @@ public class TablistEditorScreen extends Screen {
 		dirty = true;
 		lastEdit = Util.getMillis();
 		TabRenderer.invalidate();
+		if (!suppressHistory) {
+			if (!editBurst) {
+				pushHistory(undoStack, stableJson);
+				redoStack.clear();
+				editBurst = true;
+			}
+			lastChangeAt = lastEdit;
+		}
+	}
+
+	private static void pushHistory(Deque<String> stack, String json) {
+		if (!json.equals(stack.peek())) {
+			stack.push(json);
+			while (stack.size() > HISTORY_MAX) {
+				stack.removeLast();
+			}
+		}
+	}
+
+	/** Antes de un cambio de golpe (Descartar, Por defecto): se puede deshacer en un paso. */
+	private void checkpoint() {
+		pushHistory(undoStack, editBurst ? stableJson : draft.toJson());
+		if (editBurst) {
+			pushHistory(undoStack, draft.toJson());
+		}
+		redoStack.clear();
+	}
+
+	private void settleHistory() {
+		stableJson = draft.toJson();
+		editBurst = false;
+	}
+
+	private void undo(boolean redo) {
+		Deque<String> from = redo ? redoStack : undoStack;
+		Deque<String> to = redo ? undoStack : redoStack;
+		String current = draft.toJson();
+		while (!from.isEmpty()) {
+			String json = from.pop();
+			if (!json.equals(current)) {
+				pushHistory(to, current);
+				draft = TabConfig.fromJson(json);
+				settleHistory();
+				dirty = true;
+				lastEdit = Util.getMillis();
+				TabRenderer.invalidate();
+				status(Lang.tr(redo ? "msg.redo" : "msg.undo"));
+				rebuildWidgets();
+				return;
+			}
+		}
+		status(Lang.tr(redo ? "msg.nothing_redo" : "msg.nothing_undo"));
 	}
 
 	private void save() {
@@ -1212,10 +1289,19 @@ public class TablistEditorScreen extends Screen {
 		if (autoApply && dirty && !colorPreviewing && Util.getMillis() - lastEdit > 700) {
 			save();
 		}
+		if (editBurst && Util.getMillis() - lastChangeAt > HISTORY_PAUSE) {
+			settleHistory();
+		}
 	}
 
 	@Override
 	public boolean keyPressed(int key, int scanCode, int modifiers) {
+		if (popup == Popup.NONE && hasControlDown() && !hasAltDown()
+				&& (key == GLFW.GLFW_KEY_Z || key == GLFW.GLFW_KEY_Y)) {
+			// Ctrl+Z deshace, Ctrl+Y o Ctrl+Shift+Z rehace (en todo el editor).
+			undo(key == GLFW.GLFW_KEY_Y || hasShiftDown());
+			return true;
+		}
 		if (key == GLFW.GLFW_KEY_ESCAPE && popup != Popup.NONE) {
 			if (popup == Popup.EFFECT_EDIT) {
 				backToEffects();
@@ -1536,7 +1622,7 @@ public class TablistEditorScreen extends Screen {
 		editIcon = false;
 		editIconTag = "<icon:star>";
 		String body = sn.body() == null ? "" : sn.body();
-		if (body.contains("texto")) {
+		if (body.contains("text")) {
 			// El texto seleccionado en el campo, o la palabra de ejemplo.
 			String sel = "";
 			if (lastText instanceof EditBox box && children().contains(box)) {

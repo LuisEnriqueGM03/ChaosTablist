@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * Lo que se puede insertar desde el editor: efectos y placeholders, agrupados por categoría (con su clave de
  * traducción). Cada efecto es una plantilla con marcas {@code $clave$} para sus parámetros y {@code $body$} para
  * el contenido (texto o icono); con los valores por defecto sale el efecto de siempre. En el contenido por
- * defecto, "texto" es lo que se sustituye por la selección al insertar.
+ * defecto, "text" es lo que se sustituye por la selección al insertar.
  */
 public final class Snippets {
 
@@ -50,7 +50,7 @@ public final class Snippets {
 
 	public record Placeholder(String key, String category) {}
 
-	private static final String T = "texto";
+	private static final String T = "text";
 
 	public static final List<Snippet> EFFECTS = List.of(
 			fx("gradient", "color", "<gradient:$c1$:$c2$>$body$</gradient>", T,
@@ -74,13 +74,13 @@ public final class Snippets {
 					num("time", "0.4", 0.05, 3, 0.05), num("stagger", "0.05", 0, 0.5, 0.01)),
 			fx("typewriter", "animated", "<typewriter:$speed$:$pause$:cursor=$cursor$>$body$</typewriter>", T,
 					num("speed", "8", 1, 40, 1), num("pause", "2", 0, 10, 0.5), text("cursor", "_")),
-			fx("scroll", "animated", "<scroll:$width$:$speed$>$body$</scroll>", "texto que se desplaza",
+			fx("scroll", "animated", "<scroll:$width$:$speed$>$body$</scroll>", "scrolling text",
 					num("width", "10", 1, 60, 1), num("speed", "4", 0.5, 20, 0.5)),
 			fx("blink", "animated", "<blink:$on$:$off$>$body$</blink>", T,
 					num("on", "0.5", 0.1, 5, 0.1), num("off", "0.5", 0.1, 5, 0.1)),
 			fx("cycle", "animated", "<cycle:$interval$:fade=$fade$>$t1$<next>$t2$<next>$t3$</cycle>", null,
-					num("interval", "1.5", 0.1, 30, 0.1), bool("fade", "true"), text("t1", "uno"), text("t2", "dos"),
-					text("t3", "tres")),
+					num("interval", "1.5", 0.1, 30, 0.1), bool("fade", "true"), text("t1", "one"), text("t2", "two"),
+					text("t3", "three")),
 			fx("bold", "style", "<b>$body$</b>", T),
 			fx("italic", "style", "<i>$body$</i>", T),
 			fx("underlined", "style", "<u>$body$</u>", T),
@@ -104,7 +104,7 @@ public final class Snippets {
 					text("value", "{ram_pct}"), num("width", "10", 1, 40, 1), color("c1", "#55FF55"),
 					color("c2", "#3A3A3A"), text("char", "▌"), color("to", "#FF5555")),
 			fx("badge", "elements", "<badge:$text$:$bg$:$fg$:$icon$:$frame$:$bold$>", null,
-					text("text", "EVENTO"), color("bg", "#7B2CBF"), color("fg", "#FFFFFF"), text("icon", "star"),
+					text("text", "EVENT"), color("bg", "#7B2CBF"), color("fg", "#FFFFFF"), text("icon", "star"),
 					color("frame", "#3B1A5C"), bool("bold", "false")),
 			fx("head", "elements", "<head:$player$>", null, text("player", "{player}")),
 			fx("item", "elements", "<item:$item$>", null, text("item", "minecraft:diamond_sword")),
@@ -122,7 +122,7 @@ public final class Snippets {
 					color("c1", "#FF5555"), color("c2", "#FFFF55"), color("c3", "#55FF55")),
 			fx("if", "logic", "<if:$a$:$op$:$b$>$yes$<else>$no$</if>", null,
 					text("a", "{op}"), choice("op", "eq", "eq", "ne", "gt", "lt", "ge", "le", "contains", "empty"),
-					text("b", "true"), text("yes", "admin"), text("no", "jugador")),
+					text("b", "true"), text("yes", "admin"), text("no", "player")),
 			fx("legacy", "logic", "&a&lverde &r&#FF55FFrosa", null));
 
 	public static final List<Placeholder> PLACEHOLDERS = List.of(
@@ -172,9 +172,9 @@ public final class Snippets {
 		return null;
 	}
 
-	/** Ejemplo que se ve a la derecha en las listas: "texto" pasa a una palabra de muestra. */
+	/** Ejemplo que se ve a la derecha en las listas: "text" pasa a una palabra de muestra. */
 	public static String example(Snippet s, String sample) {
-		return s.text().replace("texto que se desplaza", sample + " que se desplaza").replace("texto", sample);
+		return s.text().replace("scrolling text", sample + " · " + sample).replace("text", sample);
 	}
 
 	/** Número sin ceros de más (1.50 → 1.5, 2.0 → 2). */

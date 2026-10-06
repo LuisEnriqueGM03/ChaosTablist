@@ -5,6 +5,8 @@
 - **Edit lines in place**: double-click a header, footer or animation line to edit it right in the list.
 - **Tooltips** on every editor tab and button explaining what they do.
 - **Select text with the mouse** in every field: drag to select, double-click selects a word or a whole tag; Ctrl+C / X / V to copy, cut and paste.
+- **Undo / redo** in the editor: Ctrl+Z undoes, Ctrl+Y (or Ctrl+Shift+Z) redoes any change, including Discard and Defaults.
+- Default texts are now in English (`discord.gg/example` as the sample link).
 - **35 new placeholders**: OPs and AFK online, difficulty, view/simulation distance, entities, chunks, moon phase, day/night, Java version, mods; per player XP, XP %, armor, saturation, air, light level, facing, chunk, held item, language, jumps, fish caught, distance walked, time since death; client weekday, render distance, resolution, graphics card and mod count.
 - Removed groups: each row now shows the Chaos Ranks badge next to the name; per-player formats still work.
 - Chaos Ranks placeholders only show up in the editor when Chaos Ranks is installed.

@@ -32,12 +32,12 @@ public class TabConfig {
 	public List<String> header = new ArrayList<>(List.of(
 			"",
 			"<wave:1:0.6><gradient:#B57CF0:#3FD8EA:#B57CF0:speed=0.8><b>✦ {server_name} ✦</b></gradient></wave>",
-			"<gray>Jugadores <white>{online}<dark_gray>/<gray>{max_players}  <dark_gray>| <gray>Tu ping <pc:{ping}>{ping}ms</pc>",
+			"<gray>Players <white>{online}<dark_gray>/<gray>{max_players}  <dark_gray>| <gray>Your ping <pc:{ping}>{ping}ms</pc>",
 			""));
 	public List<String> footer = new ArrayList<>(List.of(
 			"",
 			"<icon:tps:#55FF55> <gray>TPS <scale:{tps}:15:20:#FF5555:#FFFF55:#55FF55>{tps}</scale>  <icon:ram:#4AA3FF> <gray>RAM <bar:{ram_pct}:10:#55FF55:#3A3A3A:char=▌:to=#FF5555> <white>{ram}",
-			"<icon:fps:#FFC300> <gray>FPS <white>{fps}  <icon:clock:#B57CF0> <gray>Hora <white>{local_time}",
+			"<icon:fps:#FFC300> <gray>FPS <white>{fps}  <icon:clock:#B57CF0> <gray>Time <white>{local_time}",
 			"{anim:footer}",
 			""));
 
@@ -55,9 +55,9 @@ public class TabConfig {
 	public Sorting sorting = new Sorting();
 	public Map<String, Animation> animations = new LinkedHashMap<>(Map.of(
 			"footer", Animation.of(2500,
-					"<gray>Visita <gradient:#3FD8EA:#2F5BFF>discord.gg/chaos</gradient>",
-					"<gray>Escribe <yellow>/help</yellow> si te pierdes",
-					"<rainbow:1>¡Gracias por jugar!</rainbow>")));
+					"<gray>Join us at <gradient:#3FD8EA:#2F5BFF>discord.gg/example</gradient>",
+					"<gray>Type <yellow>/help</yellow> if you get lost",
+					"<rainbow:1>Thanks for playing!</rainbow>")));
 
 	public static class RowFormat {
 		public String prefix = "<if:{has_rank}:eq:true>{rank} </if>";
