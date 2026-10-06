@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 1,
+	"id": "chaostablist",
+	"version": "${version}",
+	"name": "Chaos Tablist",
+	"description": "Personalización total del Tab: header y footer animados, degradados, fade, ola, fondos detrás del texto, iconos y badges en pixel art, ping, TPS, RAM, FPS y más. Se edita en caliente con /tablist desde un menú con vista previa en vivo. Funciona con clientes vanilla; con el mod en el cliente se desbloquean los efectos avanzados.",
+	"authors": [
+		"Luis Enrique Gil Mayser"
+	],
+	"license": "MIT",
+	"icon": "assets/chaostablist/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.chaos.tablist.ChaosTablist"
+		],
+		"client": [
+			"com.chaos.tablist.client.ChaosTablistClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.16.0",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"chaosranks": "*"
+	},
+	"mixins": [
+		"chaostablist.mixins.json"
+	]
+}

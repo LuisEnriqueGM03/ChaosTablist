@@ -1,0 +1,15 @@
+{
+	"required": true,
+	"package": "com.chaos.tablist.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"ServerPlayerMixin"
+	],
+	"client": [
+		"client.GuiMixin",
+		"client.MultiLineEditBoxAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
