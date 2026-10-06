@@ -32,7 +32,7 @@ $metadata = @{
 	# ReadAllText: en PowerShell 5.1, Get-Content -Raw añade propiedades que ConvertTo-Json serializa.
 	changelog     = [IO.File]::ReadAllText("$root\tools\changelog.md", [Text.Encoding]::UTF8)
 	changelogType = "markdown"
-	displayName   = "Chaos - Tablist $version"
+	displayName   = "Chaos-Tablist $version"
 	gameVersions  = @($ids)
 	releaseType   = $ReleaseType
 	relations     = @{ projects = @(@{ slug = "fabric-api"; type = "requiredDependency" }) }
@@ -40,7 +40,7 @@ $metadata = @{
 $metaFile = Join-Path $env:TEMP "chaostablist-cf-metadata.json"
 [IO.File]::WriteAllText($metaFile, $metadata, (New-Object Text.UTF8Encoding $false))
 
-Write-Host "Proyecto $ProjectId | $($jar.Name) | Chaos - Tablist $version | $ReleaseType"
+Write-Host "Proyecto $ProjectId | $($jar.Name) | Chaos-Tablist $version | $ReleaseType"
 if ($DryRun) { Write-Host "DryRun: no se sube nada."; Get-Content $metaFile; exit 0 }
 
 $response = (& curl.exe -s -w "`nHTTP %{http_code}" -H "X-Api-Token: $token" `
