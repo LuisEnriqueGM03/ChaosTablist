@@ -117,26 +117,51 @@ public final class SelfTest {
 				} else if (ticks == after + 30) {
 					editor(mc, e -> {
 						e.openPopupForTest(0);
-						e.setVanillaPreview(true);
+						e.showTab(1);
+						e.openEffectEditorForTest("gradient_anim");
 					});
 				} else if (ticks == after + 38) {
-					shot(mc, "editor_vanilla");
+					shot(mc, "effect_editor");
 				} else if (ticks == after + 40) {
+					editor(mc, e -> e.openEffectEditorForTest("badge"));
+				} else if (ticks == after + 48) {
+					shot(mc, "effect_editor_badge");
+				} else if (ticks == after + 50) {
+					editor(mc, e -> {
+						e.closePopupForTest();
+						e.showTab(5);
+						e.colorPreviewForTest(0x3A7A2A);
+					});
+				} else if (ticks == after + 58) {
+					shot(mc, "color_preview");
+				} else if (ticks == after + 60) {
+					editor(mc, e -> {
+						e.closePopupForTest();
+						ChaosTablist.LOGGER.info("[selftest] vista previa deshecha: panelColor={}", e.draft().layout.panelColor);
+					});
+				} else if (ticks == after + 70) {
+					editor(mc, e -> {
+						e.openPopupForTest(0);
+						e.setVanillaPreview(true);
+					});
+				} else if (ticks == after + 78) {
+					shot(mc, "editor_vanilla");
+				} else if (ticks == after + 80) {
 					// Guardado por la red, como el botón "Guardar".
 					editor(mc, e -> {
 						e.draft().serverName = "Servidor de Prueba";
 						e.draft().header.set(1, "<rainbow:1><b>★ {server_name} ★</b></rainbow>");
 						e.saveForTest();
 					});
-				} else if (ticks == after + 50) {
+				} else if (ticks == after + 90) {
 					ChaosTablist.LOGGER.info("[selftest] guardado por red: serverName={} header1={}",
 							TabStore.config().serverName, TabStore.config().header.get(1));
 					mc.setScreen(null);
 					TabRenderer.testFakes = 14;
 					mc.options.keyPlayerList.setDown(true);
-				} else if (ticks == after + 62) {
+				} else if (ticks == after + 102) {
 					shot(mc, "tab_saved");
-				} else if (ticks == after + 65) {
+				} else if (ticks == after + 105) {
 					mc.options.keyPlayerList.setDown(false);
 					mc.stop();
 				}

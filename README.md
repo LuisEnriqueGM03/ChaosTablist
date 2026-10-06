@@ -24,7 +24,7 @@ Lo que solo se ve con el mod (marcado con ★ en el editor) en vanilla simplemen
 Pestañas a la izquierda y el Tab en vivo a la derecha (con tus jugadores reales y jugadores de ejemplo con pings y modos distintos). Debajo de la vista previa: **Vista mod / vanilla** (para ver lo que ven los que no tienen el mod), **▶** (repite la animación de apertura) y cuántos jugadores de ejemplo mostrar.
 
 - **General**: activar, nombre del servidor, refresco para vanilla, orden (rango, nombre, ping, modo, mundo, equipo), espectadores al final.
-- **Header / Footer**: una línea por fila.
+- **Header / Footer**: una línea por fila. Clic en una línea para editarla en el campo de abajo, o doble clic para editarla ahí mismo.
 - **Jugadores**: cambios para un jugador concreto, u ocultarlo.
 - **Ping**: barras, número, ambos, solo número u oculto; formato del número, sufijo para vanilla y colores por umbral.
 - **Diseño**: fondo en degradado, borde de dos colores animado, esquinas, colores de fila (alterna y la tuya), alto de fila, márgenes, columnas, escala, cabezas, sombra, animación al abrir (caída, fundido, deslizar, zoom), estilo del marcador…
@@ -32,7 +32,7 @@ Pestañas a la izquierda y el Tab en vivo a la derecha (con tus jugadores reales
 - **Iconos**: los 162 iconos (y los PNG propios); clic para copiar.
 - **Ayuda**: todos los placeholders con su valor actual y todas las etiquetas con un ejemplo en vivo.
 
-Los botones **Color / Efecto / Icono / Dato** meten la etiqueta en el cursor del último campo usado. Los campos de plantilla colorean las etiquetas en morado y los placeholders en celeste. **Guardar** lo aplica a todo el servidor al momento; con **Auto: Sí** se guarda solo mientras escribes.
+Los botones **Color / Efecto / Icono / Dato** meten la etiqueta en el cursor del último campo usado. En **Color**, **Vista previa** prueba el color en el Tab en vivo y solo se queda si pulsas **OK**. En **Efecto**, el botón **✎** de cada efecto abre su editor: colores, velocidad y demás opciones, y si va con un texto o con un icono, con vista previa antes de insertarlo. Todas las pestañas y botones tienen un tooltip que explica qué hacen. Los campos de plantilla colorean las etiquetas en morado y los placeholders en celeste. **Guardar** lo aplica a todo el servidor al momento; con **Auto: Sí** se guarda solo mientras escribes.
 
 ## Formato de texto
 

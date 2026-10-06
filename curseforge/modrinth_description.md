@@ -21,6 +21,8 @@ Type `/tablist` and a custom editor opens with tabs on the left and your **live 
 
 - **Header / Footer**, **Players**, **Ping**, **Design**, **Animations**, **Icons** and a **Help** tab listing every placeholder with its current value.
 - One click inserts **colors**, **effects**, **icons** and **placeholders** right at your cursor. Templates are syntax-highlighted.
+- Every effect has a **✎ editor** to tweak its colors, speed and options and choose a text or an icon inside it, with a live preview.
+- **Preview colors** in the live tab before accepting them, **double-click lines** to edit them in place, and **tooltips** everywhere.
 - **Save** applies it to everyone instantly, or turn on **Auto** to apply as you type.
 
 ![Editor](PASTE_EDITOR_URL_HERE)

@@ -1,3 +1,13 @@
+## Chaos Tablist 1.1.0
+
+- **Effect editor**: every effect in the Effect list has a ✎ button to set its colors, speed and other options, and to choose whether it wraps a text or an icon, with a live preview before inserting it.
+- **Color preview**: the color picker has a Preview button that tries the color in the live tab before you press OK. Closing without OK puts the old color back.
+- **Edit lines in place**: double-click a header, footer or animation line to edit it right in the list.
+- **Tooltips** on every editor tab and button explaining what they do.
+- Removed groups: each row now shows the Chaos Ranks badge next to the name; per-player formats still work.
+- Chaos Ranks placeholders only show up in the editor when Chaos Ranks is installed.
+- Picking a color while text is selected now colors only that text instead of replacing it.
+
 ## Chaos Tablist 1.0.0
 
 First release.

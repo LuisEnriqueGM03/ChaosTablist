@@ -1,5 +1,6 @@
 package com.chaos.tablist.client.editor;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -13,6 +14,7 @@ import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import com.chaos.tablist.ChaosTablist;
 import com.chaos.tablist.Lang;
@@ -34,8 +36,10 @@ import com.chaos.tablist.text.Palette;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineEditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.Whence;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
@@ -71,7 +75,8 @@ public class TablistEditorScreen extends Screen {
 		}
 	}
 
-	private enum Popup { NONE, COLOR, EFFECT, ICON, DATA }
+	/** EFFECT_EDIT va al final para no mover los índices que usa la autoprueba. */
+	private enum Popup { NONE, COLOR, EFFECT, ICON, DATA, EFFECT_EDIT }
 
 	private static final ResourceLocation PANEL = ChaosTablist.id("panel");
 	private static final ResourceLocation INSET = ChaosTablist.id("inset");
@@ -132,18 +137,46 @@ public class TablistEditorScreen extends Screen {
 	private boolean codeMode;
 	@Nullable private int[] lineArea;
 	@Nullable private List<String> lineTarget;
+	/** Línea que se está editando en su propia fila (doble clic), o -1. */
+	private int inlineLine = -1;
+	@Nullable private EditBox inlineBox;
+	private int lastLineClick = -1;
+	private long lastLineClickAt;
+	private long linesHoverSince;
 
 	// Selector de color.
 	private int pickRgb = 0xFFFFFF;
 	private int pickAlpha = 255;
 	private boolean draggingAlpha;
 	private boolean syncingHex;
+	@Nullable private GoldButton hexPreview;
+	/** Desplegable al que se vuelve al elegir un color o un icono (el editor de efectos). */
+	private Popup returnTo = Popup.NONE;
+	/** Valor del campo antes de la vista previa del color (para dejarlo como estaba si no se pulsa OK). */
+	@Nullable private String colorOriginal;
+	@Nullable private EditBox previewBox;
+	@Nullable private String previewBoxValue;
+	private int previewBoxCursor;
+	private int previewBoxAnchor;
+	private boolean colorPreviewing;
+
+	// Editor de un efecto (botón ✎).
+	@Nullable private Snippets.Snippet editing;
+	private final Map<String, String> editValues = new HashMap<>();
+	private String editText = "";
+	private boolean editIcon;
+	private String editIconTag = "<icon:star>";
+	@Nullable private Consumer<String> iconPick;
+	private final List<AbstractWidget> popupWidgets = new ArrayList<>();
+	private final List<Swatch> popupSwatches = new ArrayList<>();
+	private final List<Label> popupLabels = new ArrayList<>();
 
 	/** Vista previa de una plantilla dentro del formulario. */
 	private record Preview(int x, int y, int w, Supplier<String> template, Supplier<Map<String, String>> values) {}
 
 	/** Fila de las listas de efectos y datos: cabecera (header != null) o elemento con su ejemplo. */
-	private record PopupRow(@Nullable Component header, String label, String insert, String example, Component desc) {}
+	private record PopupRow(@Nullable Component header, String label, String insert, String example, Component desc,
+			@Nullable Snippets.Snippet snippet) {}
 
 	/** Texto suelto; con {@code maxWidth} &gt; 0 se parte en líneas. */
 	private record Label(int x, int y, Supplier<Component> text, int color, int maxWidth) {}
@@ -231,6 +264,13 @@ public class TablistEditorScreen extends Screen {
 	/** Botón tan ancho como su texto. */
 	private GoldButton fit(int x, int y, Component text, Runnable action) {
 		return button(x, y, font.width(text) + 12, FH + 2, text, action);
+	}
+
+	/** Tooltip de vanilla con la explicación de {@code key} (sale al dejar el ratón encima un momento). */
+	private <T extends AbstractWidget> T tip(T widget, String key) {
+		widget.setTooltip(Tooltip.create(Lang.tr(key)));
+		widget.setTooltipDelay(Duration.ofMillis(300));
+		return widget;
 	}
 
 	/** Campo de una línea sin el borde de vanilla (el recuadro lo pinta el menú). Las plantillas se colorean. */
@@ -417,6 +457,7 @@ public class TablistEditorScreen extends Screen {
 		previews.clear();
 		lineArea = null;
 		lineTarget = null;
+		inlineBox = null;
 
 		// Pestañas.
 		List<int[]> layout = tabLayout();
@@ -424,16 +465,17 @@ public class TablistEditorScreen extends Screen {
 		for (int i = 0; i < tabs.length; i++) {
 			Tab t = tabs[i];
 			int[] p = layout.get(i);
-			button(p[0], p[1], p[2], 16, t.title(), () -> {
+			tip(button(p[0], p[1], p[2], 16, t.title(), () -> {
+				closePopup();
 				tab = t;
-				popup = Popup.NONE;
 				rowsScroll = 0;
 				listScroll = 0;
 				popupScroll = 0;
 				selectedLine = 0;
 				lineScroll = 0;
+				inlineLine = -1;
 				rebuildWidgets();
-			}).selected(tab == t);
+			}), "tab." + t.name().toLowerCase() + ".tip").selected(tab == t);
 		}
 
 		int[] c = content();
@@ -452,16 +494,19 @@ public class TablistEditorScreen extends Screen {
 		if (tab.text()) {
 			int bw = (c[2] - 6) / 4;
 			int by = insertY();
-			button(c[0], by, bw, FH, Lang.tr("insert.color"), () -> openPopup(Popup.COLOR, null));
-			button(c[0] + bw + 2, by, bw, FH, Lang.tr("insert.effect"), () -> openPopup(Popup.EFFECT, null));
-			button(c[0] + 2 * (bw + 2), by, bw, FH, Lang.tr("insert.icon"), () -> openPopup(Popup.ICON, null));
-			button(c[0] + 3 * (bw + 2), by, bw, FH, Lang.tr("insert.data"), () -> openPopup(Popup.DATA, null));
+			tip(button(c[0], by, bw, FH, Lang.tr("insert.color"), () -> openPopup(Popup.COLOR, null)), "insert.color.tip");
+			tip(button(c[0] + bw + 2, by, bw, FH, Lang.tr("insert.effect"), () -> openPopup(Popup.EFFECT, null)),
+					"insert.effect.tip");
+			tip(button(c[0] + 2 * (bw + 2), by, bw, FH, Lang.tr("insert.icon"), () -> openPopup(Popup.ICON, null)),
+					"insert.icon.tip");
+			tip(button(c[0] + 3 * (bw + 2), by, bw, FH, Lang.tr("insert.data"), () -> openPopup(Popup.DATA, null)),
+					"insert.data.tip");
 		}
 
 		// Campo hexadecimal del selector de color (solo visible con ese desplegable abierto).
 		int[] pr = popupRect();
 		int hexY = pr[1] + pr[3] - 21;
-		hexBox = new EditBox(font, pr[0] + 7 + 30 + 4, hexY + 4, 66, 10, Component.empty());
+		hexBox = new EditBox(font, pr[0] + 7 + 30 + 4, hexY + 4, 56, 10, Component.empty());
 		hexBox.setBordered(false);
 		hexBox.setTextColor(FIELD_TEXT);
 		hexBox.setMaxLength(9);
@@ -471,53 +516,63 @@ public class TablistEditorScreen extends Screen {
 			if (col != null && !syncingHex) {
 				pickRgb = col & 0xFFFFFF;
 				pickAlpha = (col >>> 24) & 0xFF;
+				refreshColorPreview();
 			}
 		});
-		hexOk = new GoldButton(pr[0] + pr[2] - 7 - 44, hexY, 44, FH, Lang.tr("button.ok"),
-				b -> pickColor(pickAlpha << 24 | pickRgb));
+		hexOk = tip(new GoldButton(pr[0] + pr[2] - 7 - 36, hexY, 36, FH, Lang.tr("button.ok"),
+				b -> pickColor(pickAlpha << 24 | pickRgb)), "button.ok.tip");
+		Component pv = Lang.tr("button.preview");
+		int pvw = font.width(pv) + 10;
+		hexPreview = tip(new GoldButton(hexOk.getX() - 2 - pvw, hexY, pvw, FH, pv, b -> toggleColorPreview()),
+				"button.preview.tip");
 		updatePopupWidgets();
+		if (popup == Popup.EFFECT_EDIT) {
+			buildEffectEditor();
+		}
 
 		// Barra de abajo.
 		int by = bottomY();
 		int bx = M;
-		bx += fit(bx, by, Lang.tr("button.save"), this::save).getWidth() + 2;
-		bx += fit(bx, by, Lang.tr("button.discard"), () -> {
+		bx += tip(fit(bx, by, Lang.tr("button.save"), this::save), "button.save.tip").getWidth() + 2;
+		bx += tip(fit(bx, by, Lang.tr("button.discard"), () -> {
 			draft = original.copy();
 			dirty = false;
 			TabRenderer.invalidate();
 			rebuildWidgets();
-		}).getWidth() + 2;
-		bx += fit(bx, by, Lang.tr("button.defaults"), () -> {
+		}), "button.discard.tip").getWidth() + 2;
+		bx += tip(fit(bx, by, Lang.tr("button.defaults"), () -> {
 			draft = new TabConfig();
 			draft.sanitize();
 			changed();
 			rebuildWidgets();
-		}).getWidth() + 2;
-		fit(bx, by, Lang.tr("button.auto", Lang.yesNo(autoApply)), () -> {
+		}), "button.defaults.tip").getWidth() + 2;
+		tip(fit(bx, by, Lang.tr("button.auto", Lang.yesNo(autoApply)), () -> {
 			autoApply = !autoApply;
 			rebuildWidgets();
-		});
+		}), "button.auto.tip");
 		Component close = Lang.tr("button.close");
-		fit(width - M - font.width(close) - 12, by, close, this::onClose);
+		tip(fit(width - M - font.width(close) - 12, by, close, this::onClose), "button.close.tip");
 
 		// Controles de la vista previa (dentro de su panel, abajo).
 		int px = previewX() + 4;
 		int py = bottomY() - 4 - FH - 3;
-		px += button(px, py, font.width(Lang.tr("button.view_vanilla")) + 10, FH,
+		px += tip(button(px, py, font.width(Lang.tr("button.view_vanilla")) + 10, FH,
 				Lang.tr(vanillaPreview ? "button.view_vanilla" : "button.view_mod"), () -> {
 					vanillaPreview = !vanillaPreview;
 					rebuildWidgets();
-				}).getWidth() + 2;
-		px += button(px, py, 16, FH, Component.literal("▶"), () -> {
+				}), "button.view.tip").getWidth() + 2;
+		px += tip(button(px, py, 16, FH, Component.literal("▶"), () -> {
 			previewAnimStart = Util.getMillis();
 			previewOpenedAt = ClientContext.now();
-		}).getWidth() + 2;
-		px += button(px, py, 14, FH, Component.literal("-"), () -> fakePlayers = Math.max(0, fakePlayers - 1)).getWidth() + 2;
+		}), "button.replay.tip").getWidth() + 2;
+		px += tip(button(px, py, 14, FH, Component.literal("-"), () -> fakePlayers = Math.max(0, fakePlayers - 1)),
+				"button.fakes.tip").getWidth() + 2;
 		labels.add(new Label(px + 1, py + 4, () -> Component.empty()
 				.append(Component.literal(String.valueOf(Icons.icon("players").glyph())).withStyle(Style.EMPTY.withFont(Icons.FONT_COMPACT)))
 				.append(" " + fakePlayers), LABEL, 0));
 		px += font.width(" 20") + 12;
-		button(px, py, 14, FH, Component.literal("+"), () -> fakePlayers = Math.min(TabRenderer.MAX_FAKES, fakePlayers + 1));
+		tip(button(px, py, 14, FH, Component.literal("+"), () -> fakePlayers = Math.min(TabRenderer.MAX_FAKES, fakePlayers + 1)),
+				"button.fakes.tip");
 	}
 
 	// ----- Pestañas
@@ -576,10 +631,11 @@ public class TablistEditorScreen extends Screen {
 		Component toggle = Lang.tr(codeMode ? "button.visual" : "button.code");
 		int tw = font.width(toggle) + 12;
 		label(x, y + 4, title, w - tw - 4);
-		button(x + w - tw, y, tw, FH, toggle, () -> {
+		tip(button(x + w - tw, y, tw, FH, toggle, () -> {
 			codeMode = !codeMode;
+			inlineLine = -1;
 			rebuildWidgets();
-		});
+		}), "button.code.tip");
 		int top = y + FH + 3;
 		if (codeMode) {
 			MultiLineEditBox box = area(x, top, w, y + h - top, String.join("\n", lines), text -> {
@@ -600,21 +656,50 @@ public class TablistEditorScreen extends Screen {
 		int sel = selectedLine;
 
 		int bx = x + w - 4 * 16 + 2;
-		EditBox edit = field(x, editY, bx - x - 2, TabConfig.MAX_TEMPLATE, lines.get(sel), true, v -> {
+		EditBox edit = tip(field(x, editY, bx - x - 2, TabConfig.MAX_TEMPLATE, lines.get(sel), true, v -> {
 			if (sel < lines.size()) {
 				lines.set(sel, v);
 			}
-		});
+		}), "screen.line_field.tip");
 		setInitialFocus(edit);
-		button(bx, editY, 14, FH, Component.literal("▲"), () -> moveLine(lines, -1)).active = sel > 0;
-		button(bx + 16, editY, 14, FH, Component.literal("▼"), () -> moveLine(lines, 1)).active = sel < lines.size() - 1;
-		button(bx + 32, editY, 14, FH, Component.literal("+"), () -> {
+
+		// Doble clic en una línea: se edita ahí mismo, en su fila.
+		if (inlineLine >= 0 && inlineLine < lines.size()) {
+			int visible = Math.max(1, (lineArea[3] - 4) / 12);
+			lineScroll = Mth.clamp(lineScroll, Math.max(0, inlineLine - visible + 1), inlineLine);
+			int iy = top + 2 + (inlineLine - lineScroll) * 12;
+			int line = inlineLine;
+			EditBox box = new EditBox(font, x + 20, iy + 2, w - 24, 10, Component.empty());
+			box.setBordered(false);
+			box.setTextColor(FIELD_TEXT);
+			box.setMaxLength(TabConfig.MAX_TEMPLATE);
+			box.setValue(lines.get(line));
+			box.setFormatter((text, offset) -> highlight(box.getValue(), offset, text));
+			box.setResponder(v -> {
+				if (line < lines.size()) {
+					lines.set(line, v);
+				}
+				changed();
+			});
+			templateBoxes.add(box);
+			addRenderableWidget(box);
+			inlineBox = box;
+			setInitialFocus(box);
+		} else {
+			inlineLine = -1;
+		}
+		tip(button(bx, editY, 14, FH, Component.literal("▲"), () -> moveLine(lines, -1)), "button.line_up.tip").active = sel > 0;
+		tip(button(bx + 16, editY, 14, FH, Component.literal("▼"), () -> moveLine(lines, 1)), "button.line_down.tip").active =
+				sel < lines.size() - 1;
+		tip(button(bx + 32, editY, 14, FH, Component.literal("+"), () -> {
 			lines.add(selectedLine + 1, "");
 			selectedLine++;
+			inlineLine = -1;
 			changed();
 			rebuildWidgets();
-		}).active = lines.size() < TabConfig.MAX_LINES;
-		button(bx + 48, editY, 14, FH, Component.literal("✖"), () -> {
+		}), "button.line_add.tip").active = lines.size() < TabConfig.MAX_LINES;
+		tip(button(bx + 48, editY, 14, FH, Component.literal("✖"), () -> {
+			inlineLine = -1;
 			if (lines.size() > 1) {
 				lines.remove(selectedLine);
 				selectedLine = Math.max(0, selectedLine - 1);
@@ -623,7 +708,7 @@ public class TablistEditorScreen extends Screen {
 			}
 			changed();
 			rebuildWidgets();
-		});
+		}), "button.line_remove.tip");
 	}
 
 	private void moveLine(List<String> lines, int dir) {
@@ -634,6 +719,7 @@ public class TablistEditorScreen extends Screen {
 		String s = lines.remove(selectedLine);
 		lines.add(to, s);
 		selectedLine = to;
+		inlineLine = -1;
 		changed();
 		rebuildWidgets();
 	}
@@ -825,6 +911,7 @@ public class TablistEditorScreen extends Screen {
 			selectedAnimation = i;
 			selectedLine = 0;
 			lineScroll = 0;
+			inlineLine = -1;
 			rebuildWidgets();
 		}, () -> {
 			String id = freeId("anim", names);
@@ -886,8 +973,12 @@ public class TablistEditorScreen extends Screen {
 	}
 
 	private void openPopup(Popup p, @Nullable Consumer<String> target, @Nullable String current) {
+		revertColorPreview();
 		popup = popup == p && target == null ? Popup.NONE : p;
 		colorTarget = target;
+		colorOriginal = current;
+		returnTo = Popup.NONE;
+		iconPick = null;
 		popupScroll = 0;
 		Integer c = ColorUtil.parse(current);
 		if (c != null) {
@@ -898,12 +989,114 @@ public class TablistEditorScreen extends Screen {
 		updatePopupWidgets();
 	}
 
+	/**
+	 * Cierra el desplegable sin aceptar: deshace la vista previa del color y vuelve al editor de efectos si se
+	 * abrió desde ahí. Con {@code all} se cierra todo (al cambiar de pestaña).
+	 */
+	private void closePopup(boolean all) {
+		revertColorPreview();
+		Popup back = all ? Popup.NONE : returnTo;
+		returnTo = Popup.NONE;
+		colorTarget = null;
+		iconPick = null;
+		popup = back;
+		popupScroll = 0;
+		if (popup == Popup.EFFECT_EDIT) {
+			buildEffectEditor();
+		} else {
+			editing = null;
+			clearPopupWidgets();
+		}
+		updatePopupWidgets();
+	}
+
+	private void closePopup() {
+		closePopup(true);
+	}
+
 	private void updatePopupWidgets() {
-		if (hexBox != null && hexOk != null) {
+		if (hexBox != null && hexOk != null && hexPreview != null) {
 			boolean show = popup == Popup.COLOR;
 			hexBox.visible = show;
 			hexOk.visible = show;
+			hexPreview.visible = show;
+			hexPreview.setMessage(Lang.tr(colorPreviewing ? "button.preview_off" : "button.preview"));
+			hexPreview.active = colorTarget != null || lastText instanceof EditBox box && children().contains(box);
 		}
+	}
+
+	// ----- Vista previa del color (se aplica sin cerrar; si no se pulsa OK se deshace)
+
+	private String pickedHex() {
+		int argb = pickAlpha << 24 | pickRgb;
+		return (argb >>> 24) == 0xFF ? String.format("#%06X", argb & 0xFFFFFF) : String.format("#%08X", argb);
+	}
+
+	private void toggleColorPreview() {
+		if (colorPreviewing) {
+			revertColorPreview();
+		} else {
+			colorPreviewing = true;
+			if (colorTarget == null && lastText instanceof EditBox box && children().contains(box)) {
+				// Recordar el campo tal cual (texto, cursor y selección) para poder dejarlo igual.
+				previewBox = box;
+				previewBoxValue = box.getValue();
+				previewBoxCursor = box.getCursorPosition();
+				String sel = box.getHighlighted();
+				int start = previewBoxCursor;
+				if (!sel.isEmpty() && !box.getValue().startsWith(sel, start)) {
+					start = previewBoxCursor - sel.length();
+				}
+				previewBoxAnchor = sel.isEmpty() ? previewBoxCursor : (start == previewBoxCursor ? start + sel.length() : start);
+			}
+			refreshColorPreview();
+		}
+		updatePopupWidgets();
+	}
+
+	/** Vuelve a aplicar el color elegido mientras la vista previa está activa (paleta, transparencia, hex). */
+	private void refreshColorPreview() {
+		if (!colorPreviewing || popup != Popup.COLOR) {
+			return;
+		}
+		String hex = pickedHex();
+		if (colorTarget != null) {
+			colorTarget.accept(hex);
+		} else if (previewBox != null && previewBoxValue != null) {
+			restorePreviewBox();
+			previewBox.insertText(colorTag(hex, previewBox.getHighlighted()));
+		}
+		TabRenderer.invalidate();
+	}
+
+	private void restorePreviewBox() {
+		if (previewBox == null || previewBoxValue == null) {
+			return;
+		}
+		previewBox.setValue(previewBoxValue);
+		previewBox.setCursorPosition(previewBoxCursor);
+		previewBox.setHighlightPos(previewBoxAnchor);
+	}
+
+	/** Deja todo como antes de la vista previa. */
+	private void revertColorPreview() {
+		if (!colorPreviewing) {
+			return;
+		}
+		colorPreviewing = false;
+		if (colorTarget != null && colorOriginal != null) {
+			colorTarget.accept(colorOriginal);
+		} else {
+			restorePreviewBox();
+		}
+		previewBox = null;
+		previewBoxValue = null;
+		TabRenderer.invalidate();
+	}
+
+	/** Etiqueta de color; si hay texto seleccionado, lo colorea solo a él. */
+	private static String colorTag(String hex, @Nullable String selected) {
+		return selected == null || selected.isEmpty() ? "<" + hex + ">" : "<" + hex + ">" + selected + "</>";
 	}
 
 	/** Zona del desplegable: encima del panel izquierdo (deja libre la barra de insertar). */
@@ -913,33 +1106,54 @@ public class TablistEditorScreen extends Screen {
 		return new int[] {x, y, leftW() - 4, insertY() - 2 - y};
 	}
 
+	/** OK del selector de color: se queda el color (con o sin vista previa). */
 	private void pickColor(int argb) {
 		String hex = (argb >>> 24) == 0xFF ? String.format("#%06X", argb & 0xFFFFFF) : String.format("#%08X", argb);
+		boolean previewed = colorPreviewing;
+		colorPreviewing = false;
 		if (colorTarget != null) {
-			colorTarget.accept(hex);
-			popup = Popup.NONE;
-			updatePopupWidgets();
+			Consumer<String> target = colorTarget;
+			target.accept(hex);
+			closePopup(false);
 			return;
 		}
-		insert("<" + hex + ">");
+		if (previewed && previewBox != null) {
+			// Ya está metido por la vista previa: se aplica de nuevo sobre el texto original y se deja.
+			restorePreviewBox();
+			previewBox = null;
+			previewBoxValue = null;
+		}
+		insert(hex, true);
 	}
 
-	/** Mete el texto en el cursor del último campo de plantilla usado; si no hay, lo copia al portapapeles. */
 	private void insert(String text) {
-		popup = Popup.NONE;
-		updatePopupWidgets();
+		insert(text, false, false);
+	}
+
+	private void insert(String text, boolean color) {
+		insert(text, color, false);
+	}
+
+	/**
+	 * Mete el texto en el cursor del último campo de plantilla usado; si no hay, lo copia al portapapeles. Con
+	 * {@code color} es una etiqueta de color que envuelve la selección; con {@code exact} va tal cual (el editor
+	 * de efectos ya ha puesto la selección como contenido).
+	 */
+	private void insert(String text, boolean color, boolean exact) {
+		closePopup();
 		if (lastText instanceof EditBox box && children().contains(box)) {
-			box.insertText(wrap(text, box.getHighlighted()));
+			box.insertText(color ? colorTag(text, box.getHighlighted()) : exact ? text : wrap(text, box.getHighlighted()));
 			setFocused(box);
 		} else if (lastText instanceof MultiLineEditBox area && children().contains(area)) {
 			var field = ((MultiLineEditBoxAccessor) area).chaostablist$textField();
-			field.insertText(wrap(text, field.getSelectedText()));
+			field.insertText(color ? colorTag(text, field.getSelectedText()) : exact ? text : wrap(text, field.getSelectedText()));
 			setFocused(area);
 		} else {
+			String copy = color ? colorTag(text, null) : text;
 			if (minecraft != null) {
-				minecraft.keyboardHandler.setClipboard(text);
+				minecraft.keyboardHandler.setClipboard(copy);
 			}
-			status(Lang.tr("msg.copied", text));
+			status(Lang.tr("msg.copied", copy));
 			return;
 		}
 		click();
@@ -993,9 +1207,33 @@ public class TablistEditorScreen extends Screen {
 	@Override
 	public void tick() {
 		super.tick();
-		if (autoApply && dirty && Util.getMillis() - lastEdit > 700) {
+		// Con la vista previa de un color activa no se guarda nada: aún no se ha pulsado OK.
+		if (autoApply && dirty && !colorPreviewing && Util.getMillis() - lastEdit > 700) {
 			save();
 		}
+	}
+
+	@Override
+	public boolean keyPressed(int key, int scanCode, int modifiers) {
+		if (key == GLFW.GLFW_KEY_ESCAPE && popup != Popup.NONE) {
+			if (popup == Popup.EFFECT_EDIT) {
+				backToEffects();
+			} else {
+				closePopup(false);
+			}
+			return true;
+		}
+		boolean enter = key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER;
+		if (inlineBox != null && getFocused() == inlineBox && (enter || key == GLFW.GLFW_KEY_ESCAPE)) {
+			inlineLine = -1;
+			rebuildWidgets();
+			return true;
+		}
+		if (enter && popup == Popup.COLOR && getFocused() == hexBox) {
+			pickColor(pickAlpha << 24 | pickRgb);
+			return true;
+		}
+		return super.keyPressed(key, scanCode, modifiers);
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -1004,9 +1242,16 @@ public class TablistEditorScreen extends Screen {
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (popup != Popup.NONE) {
-			if (popup == Popup.COLOR && hexBox != null && hexOk != null
-					&& (hexBox.mouseClicked(mouseX, mouseY, button) || hexOk.mouseClicked(mouseX, mouseY, button))) {
-				setFocused(hexBox);
+			if (popup == Popup.COLOR && hexBox != null && hexOk != null && hexPreview != null) {
+				if (hexBox.mouseClicked(mouseX, mouseY, button)) {
+					setFocused(hexBox);
+					return true;
+				}
+				if (hexOk.mouseClicked(mouseX, mouseY, button) || hexPreview.mouseClicked(mouseX, mouseY, button)) {
+					return true;
+				}
+			}
+			if (popup == Popup.EFFECT_EDIT && effectEditorClick(mouseX, mouseY, button)) {
 				return true;
 			}
 			int[] r = popupRect();
@@ -1014,8 +1259,10 @@ public class TablistEditorScreen extends Screen {
 				popupClick((int) mouseX, (int) mouseY);
 				return true;
 			}
-			popup = Popup.NONE;
-			updatePopupWidgets();
+			closePopup(false);
+			if (popup != Popup.NONE) {
+				return true;
+			}
 		}
 		if (super.mouseClicked(mouseX, mouseY, button)) {
 			return true;
@@ -1026,7 +1273,13 @@ public class TablistEditorScreen extends Screen {
 				&& my >= lineArea[1] + 2 && my < lineArea[1] + lineArea[3] - 2) {
 			int index = (my - lineArea[1] - 2) / 12 + lineScroll;
 			if (index >= 0 && index < lineTarget.size()) {
+				// Doble clic = editar la línea ahí mismo.
+				long now = Util.getMillis();
+				boolean twice = index == lastLineClick && now - lastLineClickAt < 400;
+				lastLineClick = twice ? -1 : index;
+				lastLineClickAt = now;
 				selectedLine = index;
+				inlineLine = twice ? index : -1;
 				click();
 				rebuildWidgets();
 				return true;
@@ -1063,6 +1316,11 @@ public class TablistEditorScreen extends Screen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		if (popup == Popup.EFFECT_EDIT) {
+			effectScroll = Math.max(0, effectScroll - (int) Math.signum(scrollY));
+			buildEffectEditor();
+			return true;
+		}
 		if (popup != Popup.NONE) {
 			popupScroll = Math.max(0, popupScroll - (int) Math.signum(scrollY));
 			return true;
@@ -1126,16 +1384,30 @@ public class TablistEditorScreen extends Screen {
 			case ICON -> {
 				String s = iconAt(mx, my, new int[] {x, y, w, r[3] - 30});
 				if (s != null) {
-					insert(s);
+					if (iconPick != null) {
+						// Elegido para el editor de efectos: se vuelve a él.
+						iconPick.accept(s);
+						iconPick = null;
+						click();
+						closePopup(false);
+					} else {
+						insert(s);
+					}
 				}
 			}
 			case EFFECT, DATA -> {
 				List<PopupRow> rows = popupRows(popup == Popup.EFFECT);
 				int i = rowAt(mx, my, x, y, w, r[3] - 42, rows.size());
 				if (i >= 0 && rows.get(i).header() == null) {
-					insert(rows.get(i).insert());
+					PopupRow row = rows.get(i);
+					if (row.snippet() != null && row.snippet().editable() && mx >= x + w - EDIT_W) {
+						openEffectEditor(row.snippet());
+					} else {
+						insert(row.insert());
+					}
 				}
 			}
+			case EFFECT_EDIT -> effectEditorAreaClick(mx, my);
 			default -> {}
 		}
 	}
@@ -1143,35 +1415,44 @@ public class TablistEditorScreen extends Screen {
 	private static final String[] EFFECT_CATEGORIES = {"color", "motion", "animated", "style", "elements", "logic"};
 	private static final String[] DATA_CATEGORIES = {"server", "player", "client", "rank"};
 
+	/** Ancho del botón ✎ (editar el efecto) al final de cada fila de efectos. */
+	private static final int EDIT_W = 14;
+	/** El ratón está sobre un ✎ (lo pone renderRows). */
+	private boolean hoverEdit;
+
 	/** Filas de las listas: efectos (nombre | ejemplo animado) o datos ({variable} | valor de ahora). */
 	private List<PopupRow> popupRows(boolean effects) {
 		List<PopupRow> out = new ArrayList<>();
 		if (effects) {
 			String sample = Lang.tr("screen.sample").getString();
 			for (String cat : EFFECT_CATEGORIES) {
-				out.add(new PopupRow(Lang.tr("cat." + cat), "", "", "", Component.empty()));
+				out.add(new PopupRow(Lang.tr("cat." + cat), "", "", "", Component.empty(), null));
 				for (Snippets.Snippet sn : Snippets.EFFECTS) {
 					if (sn.category().equals(cat)) {
 						out.add(new PopupRow(null, Lang.tr("snippet." + sn.id()).getString(), sn.text(),
-								Snippets.example(sn, sample), Lang.tr("snippet." + sn.id() + ".desc")));
+								Snippets.example(sn, sample), Lang.tr("snippet." + sn.id() + ".desc"), sn));
 					}
 				}
 			}
 		} else {
 			for (String cat : DATA_CATEGORIES) {
-				out.add(new PopupRow(Lang.tr("cat." + cat), "", "", "", Component.empty()));
+				// Los datos de Chaos Ranks solo salen si está instalado.
+				if (cat.equals("rank") && !chaosRanks) {
+					continue;
+				}
+				out.add(new PopupRow(Lang.tr("cat." + cat), "", "", "", Component.empty(), null));
 				for (Snippets.Placeholder ph : Snippets.PLACEHOLDERS) {
 					if (ph.category().equals(cat)) {
 						String key = "{" + ph.key() + "}";
-						out.add(new PopupRow(null, key, key, key, Lang.tr("ph." + ph.key())));
+						out.add(new PopupRow(null, key, key, key, Lang.tr("ph." + ph.key()), null));
 					}
 				}
 			}
 			if (!draft.animations.isEmpty()) {
-				out.add(new PopupRow(Lang.tr("cat.animations"), "", "", "", Component.empty()));
+				out.add(new PopupRow(Lang.tr("cat.animations"), "", "", "", Component.empty(), null));
 				for (String a : draft.animations.keySet()) {
 					String key = "{anim:" + a + "}";
-					out.add(new PopupRow(null, key, key, key, Lang.tr("screen.anim_desc")));
+					out.add(new PopupRow(null, key, key, key, Lang.tr("screen.anim_desc"), null));
 				}
 			}
 		}
@@ -1192,12 +1473,14 @@ public class TablistEditorScreen extends Screen {
 	 * animado). Devuelve la fila que tiene el ratón encima.
 	 */
 	@Nullable
-	private PopupRow renderRows(GuiGraphics g, List<PopupRow> rows, int x, int y, int w, int h, int mouseX, int mouseY) {
+	private PopupRow renderRows(GuiGraphics g, List<PopupRow> rows, int x, int y, int w, int h, int mouseX, int mouseY,
+			boolean editButtons) {
 		int visible = Math.max(1, h / 12);
 		popupScroll = Mth.clamp(popupScroll, 0, Math.max(0, rows.size() - visible));
 		ClientContext ctx = new ClientContext(draft, selfValues(), ClientState.global(), ClientContext.now(), previewOpenedAt, false);
 		int half = w / 2;
 		PopupRow hovered = null;
+		hoverEdit = false;
 		for (int k = 0; k < visible && k + popupScroll < rows.size(); k++) {
 			PopupRow row = rows.get(k + popupScroll);
 			int ry = y + k * 12;
@@ -1215,15 +1498,287 @@ public class TablistEditorScreen extends Screen {
 			boolean variable = row.label().startsWith("{");
 			g.drawString(font, font.plainSubstrByWidth(row.label(), half - 6), x + 4, ry + 2,
 					variable ? PLACEHOLDER_TEXT : FIELD_TEXT, false);
-			g.enableScissor(x + half, ry, x + w, ry + 12);
+			boolean edit = editButtons && row.snippet() != null && row.snippet().editable();
+			int exampleEnd = edit ? x + w - EDIT_W - 2 : x + w;
+			g.enableScissor(x + half, ry, exampleEnd, ry + 12);
 			RichText.draw(g, font, RichText.lines(Evaluator.eval(row.example(), ctx)).get(0), x + half + 2, ry + 2, 1, true);
 			g.disableScissor();
+			if (edit) {
+				// Botón ✎: abrir el editor del efecto.
+				int bx = x + w - EDIT_W;
+				boolean overEdit = over && mouseX >= bx;
+				hoverEdit |= overEdit;
+				g.fill(bx, ry + 1, bx + EDIT_W, ry + 11, overEdit ? GOLD : 0xFF5A3A14);
+				g.drawString(font, "✎", bx + (EDIT_W - font.width("✎")) / 2 + 1, ry + 2, overEdit ? INK : GOLD_LIGHT, false);
+			}
 		}
 		if (rows.size() > visible) {
 			String s = "▲▼ " + (popupScroll + 1) + "/" + (rows.size() - visible + 1);
 			g.drawString(font, s, x + w - font.width(s), y - 11, HINT, false);
 		}
 		return hovered;
+	}
+
+	// ----- Editor de un efecto (✎): parámetros y contenido (texto o icono) antes de insertarlo
+
+	private int effectScroll;
+	private final List<int[]> popupFields = new ArrayList<>();
+
+	private void openEffectEditor(Snippets.Snippet sn) {
+		editing = sn;
+		editValues.clear();
+		editValues.putAll(sn.defaults());
+		editIcon = false;
+		editIconTag = "<icon:star>";
+		String body = sn.body() == null ? "" : sn.body();
+		if (body.contains("texto")) {
+			// El texto seleccionado en el campo, o la palabra de ejemplo.
+			String sel = "";
+			if (lastText instanceof EditBox box && children().contains(box)) {
+				sel = box.getHighlighted();
+			} else if (lastText instanceof MultiLineEditBox area && children().contains(area)) {
+				sel = ((MultiLineEditBoxAccessor) area).chaostablist$textField().getSelectedText();
+			}
+			editText = sel.isEmpty() ? Lang.tr("screen.sample").getString() : sel;
+		} else {
+			editText = body;
+		}
+		effectScroll = 0;
+		popup = Popup.EFFECT_EDIT;
+		click();
+		buildEffectEditor();
+		updatePopupWidgets();
+	}
+
+	/** Vuelve a la lista de efectos sin insertar nada. */
+	private void backToEffects() {
+		popup = Popup.EFFECT;
+		editing = null;
+		clearPopupWidgets();
+		updatePopupWidgets();
+	}
+
+	private void clearPopupWidgets() {
+		if (getFocused() instanceof AbstractWidget w && popupWidgets.contains(w)) {
+			super.setFocused(lastText != null && children().contains(lastText) ? lastText : null);
+		}
+		popupWidgets.clear();
+		popupSwatches.clear();
+		popupLabels.clear();
+		popupFields.clear();
+	}
+
+	/** El efecto con los valores elegidos. */
+	private String buildEffect() {
+		if (editing == null) {
+			return "";
+		}
+		String content = editing.body() == null ? null : editIcon ? editIconTag : editText;
+		return editing.build(editValues, content);
+	}
+
+	private int[] effectRowsArea() {
+		int[] r = popupRect();
+		return new int[] {r[0] + 7, r[1] + 17, r[2] - 14, r[3] - 17 - 48};
+	}
+
+	/** Monta los campos del editor (fuera de la lista de widgets del menú: se dibujan y pulsan a mano). */
+	private void buildEffectEditor() {
+		clearPopupWidgets();
+		Snippets.Snippet sn = editing;
+		if (sn == null) {
+			return;
+		}
+		int[] a = effectRowsArea();
+		int x = a[0];
+		int w = a[2];
+		int lw = labelW(w);
+		List<RowBuilder> rows = new ArrayList<>();
+		for (Snippets.Param p : sn.params()) {
+			rows.add((rx, ry, rw) -> paramRow(p, rx, ry, rw, lw));
+		}
+		if (sn.body() != null) {
+			rows.add((rx, ry, rw) -> bodyRow(rx, ry, rw, lw));
+		}
+		int visible = Math.max(1, a[3] / ROW);
+		effectScroll = Mth.clamp(effectScroll, 0, Math.max(0, rows.size() - visible));
+		for (int k = 0; k < visible && k + effectScroll < rows.size(); k++) {
+			rows.get(k + effectScroll).build(x, a[1] + k * ROW, w);
+		}
+		if (rows.size() > visible) {
+			String s = "▲▼ " + (effectScroll + 1) + "/" + (rows.size() - visible + 1);
+			popupLabels.add(new Label(x + w - font.width(s), a[1] - 11, () -> Component.literal(s), HINT, 0));
+		}
+		if (rows.isEmpty()) {
+			popupLabels.add(new Label(x, a[1] + 4, () -> Lang.tr("screen.no_params"), HINT, w));
+		}
+
+		// Volver e Insertar.
+		int[] r = popupRect();
+		int by = r[1] + r[3] - 21;
+		Component back = Lang.tr("button.back");
+		popupWidgets.add(tip(new GoldButton(x, by, font.width(back) + 12, FH, back, b -> {
+			backToEffects();
+		}), "button.back.tip"));
+		Component ins = Lang.tr("button.insert");
+		int iw = font.width(ins) + 12;
+		popupWidgets.add(tip(new GoldButton(x + w - iw, by, iw, FH, ins, b -> insert(buildEffect(), false, true)),
+				"button.insert.tip"));
+		Component reset = Lang.tr("button.reset");
+		int rw = font.width(reset) + 12;
+		popupWidgets.add(tip(new GoldButton(x + w - iw - 2 - rw, by, rw, FH, reset, b -> {
+			editValues.clear();
+			editValues.putAll(sn.defaults());
+			buildEffectEditor();
+		}), "button.reset.tip"));
+	}
+
+	private EditBox popupField(int x, int y, int w, int max, String value, Consumer<String> onChange) {
+		popupFields.add(new int[] {x, y, w, FH});
+		EditBox box = new EditBox(font, x + 4, y + 4, w - 8, 10, Component.empty());
+		box.setBordered(false);
+		box.setTextColor(FIELD_TEXT);
+		box.setMaxLength(max);
+		box.setValue(value);
+		box.moveCursorToStart(false);
+		box.setResponder(onChange);
+		popupWidgets.add(box);
+		return box;
+	}
+
+	private void paramRow(Snippets.Param p, int x, int y, int w, int lw) {
+		Component name = Lang.tr("param." + p.key());
+		popupLabels.add(new Label(x, y + 4, () -> name, LABEL, -(lw - 4)));
+		String key = p.key();
+		String value = editValues.getOrDefault(key, p.def());
+		int fx = x + lw;
+		int fw = w - lw;
+		switch (p.kind()) {
+			case COLOR -> {
+				EditBox box = popupField(fx, y, fw - 18, 9, value, v -> {
+					if (ColorUtil.parse(v) != null) {
+						editValues.put(key, v.toUpperCase());
+					}
+				});
+				popupSwatches.add(new Swatch(x + w - 15, y + 1, 14, () -> editValues.getOrDefault(key, p.def()), box));
+			}
+			case NUMBER -> {
+				EditBox box = popupField(fx + 16, y, fw - 32, 12, value, v -> {
+					String clean = v.trim().replace(',', '.');
+					if (clean.matches("-?[0-9]+(\\.[0-9]+)?")) {
+						editValues.put(key, clean);
+					}
+				});
+				popupWidgets.add(new GoldButton(fx, y, 14, FH, Component.literal("-"), b -> {
+					box.setValue(step(p, editValues.getOrDefault(key, p.def()), -1));
+				}));
+				popupWidgets.add(new GoldButton(x + w - 14, y, 14, FH, Component.literal("+"), b -> {
+					box.setValue(step(p, editValues.getOrDefault(key, p.def()), 1));
+				}));
+			}
+			case TEXT -> popupField(fx, y, fw, 256, value, v -> editValues.put(key, v));
+			case BOOL, CHOICE -> {
+				Component text = p.kind() == Snippets.Kind.BOOL ? Lang.yesNo("true".equals(value)) : Component.literal(value);
+				popupWidgets.add(new GoldButton(fx, y, fw, FH, text, b -> {
+					List<String> opts = p.options();
+					int i = Math.max(0, opts.indexOf(editValues.getOrDefault(key, p.def())));
+					editValues.put(key, opts.get((i + 1) % opts.size()));
+					buildEffectEditor();
+				}));
+			}
+		}
+	}
+
+	private static String step(Snippets.Param p, String current, int dir) {
+		double v;
+		try {
+			v = Double.parseDouble(current);
+		} catch (NumberFormatException e) {
+			v = Double.parseDouble(p.def());
+		}
+		return Snippets.format(Mth.clamp(v + dir * p.step(), p.min(), p.max()));
+	}
+
+	/** Contenido del efecto: un texto escrito o un icono. */
+	private void bodyRow(int x, int y, int w, int lw) {
+		popupLabels.add(new Label(x, y + 4, () -> Lang.tr("param.body"), LABEL, -(lw - 4)));
+		Component mode = Lang.tr(editIcon ? "body.icon" : "body.text");
+		int mw = Math.max(font.width(Lang.tr("body.icon")), font.width(Lang.tr("body.text"))) + 12;
+		popupWidgets.add(tip(new GoldButton(x + lw, y, mw, FH, mode, b -> {
+			editIcon = !editIcon;
+			buildEffectEditor();
+		}), "body.tip"));
+		int fx = x + lw + mw + 2;
+		int fw = x + w - fx;
+		if (editIcon) {
+			popupWidgets.add(tip(new GoldButton(fx, y, fw, FH, Lang.tr("button.pick_icon"), b -> {
+				openPopup(Popup.ICON, null);
+				iconPick = s -> editIconTag = s;
+				returnTo = Popup.EFFECT_EDIT;
+				updatePopupWidgets();
+			}), "button.pick_icon.tip"));
+		} else {
+			popupField(fx, y, fw, 256, editText, v -> editText = v);
+		}
+	}
+
+	private boolean effectEditorClick(double mouseX, double mouseY, int button) {
+		for (AbstractWidget w : new ArrayList<>(popupWidgets)) {
+			if (w.visible && w.mouseClicked(mouseX, mouseY, button)) {
+				if (w instanceof EditBox) {
+					setFocused(w);
+				}
+				return true;
+			}
+		}
+		for (Swatch s : popupSwatches) {
+			if (mouseX >= s.x() && mouseX < s.x() + s.size() && mouseY >= s.y() && mouseY < s.y() + s.size()) {
+				openPopup(Popup.COLOR, hex -> s.field().setValue(hex), s.color().get());
+				returnTo = Popup.EFFECT_EDIT;
+				updatePopupWidgets();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void effectEditorAreaClick(int mx, int my) {
+		// Clic en una zona vacía del editor: se quita el foco de los campos.
+		if (getFocused() instanceof AbstractWidget w && popupWidgets.contains(w)) {
+			w.setFocused(false);
+		}
+	}
+
+	private void renderEffectEditor(GuiGraphics g, int[] r, int mouseX, int mouseY) {
+		for (int[] f : popupFields) {
+			g.blitSprite(INSET, f[0], f[1], f[2], f[3]);
+		}
+		for (Label l : popupLabels) {
+			drawLabel(g, l);
+		}
+		for (AbstractWidget w : popupWidgets) {
+			w.render(g, mouseX, mouseY, 0);
+		}
+		for (Swatch s : popupSwatches) {
+			int c = ColorUtil.parse(s.color().get(), 0);
+			g.fill(s.x() - 1, s.y() - 1, s.x() + s.size() + 1, s.y() + s.size() + 1, INK);
+			checker(g, s.x(), s.y(), s.size());
+			g.fill(s.x(), s.y(), s.x() + s.size(), s.y() + s.size(), c);
+		}
+		// Cómo queda y la etiqueta que se va a insertar.
+		int x = r[0] + 7;
+		int w = r[2] - 14;
+		int py = r[1] + r[3] - 44;
+		g.fill(x, py - 3, x + w, py - 2, 0xFF5A3A14);
+		Component looks = Lang.tr("screen.looks_like");
+		g.drawString(font, looks, x, py + 1, HINT, false);
+		int lx = x + font.width(looks) + 4;
+		String built = buildEffect();
+		ClientContext ctx = new ClientContext(draft, selfValues(), ClientState.global(), ClientContext.now(), previewOpenedAt, false);
+		g.enableScissor(lx, py - 2, x + w, py + 11);
+		RichText.draw(g, font, RichText.lines(Evaluator.eval(built, ctx)).get(0), lx, py + 1, 1, true);
+		g.disableScissor();
+		g.drawString(font, font.plainSubstrByWidth(built, w), x, py + 12, TAG_TEXT, false);
 	}
 
 	// ----- Selector de color
@@ -1274,6 +1829,7 @@ public class TablistEditorScreen extends Screen {
 		syncingHex = true;
 		hexBox.setValue(pickAlpha == 255 ? String.format("#%06X", pickRgb) : String.format("#%02X%06X", pickAlpha, pickRgb));
 		syncingHex = false;
+		refreshColorPreview();
 	}
 
 	@Override
@@ -1463,13 +2019,29 @@ public class TablistEditorScreen extends Screen {
 			String num = String.valueOf(i + 1);
 			g.drawString(font, num, a[0] + 16 - font.width(num), ry + 2, HINT, false);
 			String line = lines.get(i);
-			if (line.isBlank()) {
+			if (i == inlineLine && inlineBox != null) {
+				// Se está editando aquí: el campo se dibuja encima.
+				g.fill(a[0] + 18, ry, a[0] + a[2] - 2, ry + 12, 0xFF1A0F08);
+				g.fill(a[0] + 18, ry + 11, a[0] + a[2] - 2, ry + 12, GOLD);
+			} else if (line.isBlank()) {
 				g.drawString(font, Lang.tr("screen.empty_line"), a[0] + 20, ry + 2, 0x6A5A46, false);
 			} else {
 				RichText.draw(g, font, RichText.lines(Evaluator.eval(line, ctx)).get(0), a[0] + 20, ry + 2, 1, true);
 			}
 		}
 		g.disableScissor();
+		if (inlineBox != null) {
+			inlineBox.render(g, mouseX, mouseY, 0);
+		}
+		// Explicación al dejar el ratón un rato sobre la lista.
+		boolean overList = popup == Popup.NONE && mouseX >= a[0] && mouseX < a[0] + a[2] && mouseY >= a[1] && mouseY < a[1] + a[3];
+		if (!overList) {
+			linesHoverSince = 0;
+		} else if (linesHoverSince == 0) {
+			linesHoverSince = Util.getMillis();
+		} else if (Util.getMillis() - linesHoverSince > 700 && inlineBox == null) {
+			setTooltipForNextRenderPass(Lang.tr("screen.lines.tip"));
+		}
 	}
 
 	private void renderPreview(GuiGraphics g) {
@@ -1569,7 +2141,7 @@ public class TablistEditorScreen extends Screen {
 	private void renderHelp(GuiGraphics g, int mouseX, int mouseY) {
 		int[] c = content();
 		drawLabel(g, new Label(c[0], c[1], () -> Lang.tr("screen.help_title"), LABEL, -(c[2] - 60)));
-		PopupRow hovered = renderRows(g, helpRows(), c[0], c[1] + 12, c[2], c[3] - 34, mouseX, mouseY);
+		PopupRow hovered = renderRows(g, helpRows(), c[0], c[1] + 12, c[2], c[3] - 34, mouseX, mouseY, false);
 		if (hovered != null) {
 			int fy = c[1] + c[3] - 20;
 			g.drawString(font, font.plainSubstrByWidth(hovered.desc().getString(), c[2]), c[0], fy, LABEL, false);
@@ -1606,7 +2178,9 @@ public class TablistEditorScreen extends Screen {
 		g.pose().pushPose();
 		g.pose().translate(0, 0, 400);
 		g.blitSprite(PANEL, r[0], r[1], r[2], r[3]);
-		Component title = Lang.tr("popup." + popup.name().toLowerCase());
+		Component title = popup == Popup.EFFECT_EDIT && editing != null
+				? Lang.tr("popup.effect_edit", Lang.tr("snippet." + editing.id()))
+				: iconPick != null ? Lang.tr("popup.icon_pick") : Lang.tr("popup." + popup.name().toLowerCase());
 		g.drawString(font, font.plainSubstrByWidth(title.getString(), r[2] - 70), r[0] + 7, r[1] + 6, LABEL, false);
 		int x = r[0] + 7;
 		int y = r[1] + 17;
@@ -1621,24 +2195,33 @@ public class TablistEditorScreen extends Screen {
 				}
 			}
 			case EFFECT, DATA -> {
-				PopupRow hovered = renderRows(g, popupRows(popup == Popup.EFFECT), x, y, w, r[3] - 42, mouseX, mouseY);
+				PopupRow hovered = renderRows(g, popupRows(popup == Popup.EFFECT), x, y, w, r[3] - 42, mouseX, mouseY,
+						popup == Popup.EFFECT);
 				if (hovered != null) {
-					// Qué hace y lo que se va a insertar.
-					g.drawString(font, font.plainSubstrByWidth(hovered.desc().getString(), w), x, footer + 1, LABEL, false);
+					// Qué hace y lo que se va a insertar (o qué hace el ✎).
+					Component desc = hoverEdit ? Lang.tr("screen.edit_effect_hint") : hovered.desc();
+					g.drawString(font, font.plainSubstrByWidth(desc.getString(), w), x, footer + 1, LABEL, false);
 					g.drawString(font, font.plainSubstrByWidth(hovered.insert(), w), x, footer + 12, HINT, false);
 				} else {
 					g.drawString(font, font.plainSubstrByWidth(Lang.tr("screen.popup_hint").getString(), w), x, footer + 6, HINT, false);
 				}
 			}
+			case EFFECT_EDIT -> renderEffectEditor(g, r, mouseX, mouseY);
 			default -> {}
 		}
 		g.pose().popPose();
-		if (popup == Popup.COLOR && hexBox != null && hexOk != null) {
+		if (popup == Popup.COLOR && hexBox != null && hexOk != null && hexPreview != null) {
 			g.pose().pushPose();
 			g.pose().translate(0, 0, 450);
 			g.blitSprite(INSET, hexBox.getX() - 4, hexBox.getY() - 4, hexBox.getWidth() + 8, FH);
 			hexBox.render(g, mouseX, mouseY, 0);
+			hexPreview.render(g, mouseX, mouseY, 0);
 			hexOk.render(g, mouseX, mouseY, 0);
+			if (colorPreviewing) {
+				// Marca de que lo que se ve en la vista previa aún no está aceptado.
+				g.fill(hexPreview.getX(), hexPreview.getY() + FH, hexPreview.getX() + hexPreview.getWidth(), hexPreview.getY() + FH + 1,
+						0xFF55FF55);
+			}
 			g.pose().popPose();
 		}
 	}
@@ -1790,6 +2373,28 @@ public class TablistEditorScreen extends Screen {
 
 	public void openPopupForTest(int index) {
 		openPopup(Popup.values()[index], null);
+	}
+
+	/** Abre el editor (✎) de un efecto. */
+	public void openEffectEditorForTest(String id) {
+		Snippets.Snippet sn = Snippets.effect(id);
+		if (sn != null) {
+			openEffectEditor(sn);
+		}
+	}
+
+	/** Paleta para el color del panel, con la vista previa activa (sin pulsar OK). */
+	public void colorPreviewForTest(int rgb) {
+		TabConfig.Layout l = draft.layout;
+		openPopup(Popup.COLOR, v -> l.panelColor = v, l.panelColor);
+		pickRgb = rgb;
+		syncHex();
+		toggleColorPreview();
+	}
+
+	/** Cierra el desplegable sin aceptar (la vista previa se deshace). */
+	public void closePopupForTest() {
+		closePopup();
 	}
 
 	@Override
