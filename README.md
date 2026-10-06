@@ -8,6 +8,21 @@ Es **híbrido**:
 
 Lo que solo se ve con el mod (marcado con ★ en el editor) en vanilla simplemente no se aplica, sin romper el texto. Los iconos y badges salen como un símbolo de respaldo (`♛`, `★`, `[VIP]`…).
 
+## Capturas
+
+| | |
+|---|---|
+| ![Tab animado](screenshots/01_tab_animated.gif) | ![Editar una línea ahí mismo](screenshots/02_edit_line_in_place.gif) |
+| El Tab con sus animaciones | Doble clic en una línea y escribir |
+| ![Efectos](screenshots/03_effects_list.gif) | ![Editor de un efecto](screenshots/04_effect_editor.gif) |
+| Lista de efectos con ejemplos en vivo | ✎ Editor de un efecto: colores, velocidad, contenido |
+| ![Efecto insertado](screenshots/05_effect_inserted.gif) | ![Vista previa del color](screenshots/06_color_preview.gif) |
+| El efecto ya en el header | Vista previa del color antes de pulsar OK |
+| ![Deshacer](screenshots/07_undo.gif) | ![Vista vanilla](screenshots/vanilla_view.png) |
+| Ctrl+Z deshace | Lo que ven los jugadores sin el mod |
+
+Más capturas en [`screenshots/`](screenshots). Se regeneran con `./gradlew runShowcase` y `python tools/make_showcase.py`.
+
 ## Comandos (requiere OP, nivel 2)
 
 | Comando | Qué hace |
@@ -95,5 +110,6 @@ En `<mundo>/chaostablist/`:
 - `python tools/gen_icon.py`: icono del mod.
 - `./gradlew build`: jar en `build/libs/`.
 - `./gradlew runSelftest`: capturas del Tab, de cada pestaña del editor y de los desplegables en `run/screenshots/selftest_*.png`, y prueba el guardado por red. Necesita el mundo `run/saves/selftest`.
+- `./gradlew runShowcase` + `python tools/make_showcase.py`: graba las capturas y los GIF de `screenshots/`.
 - `./gradlew runSelftestVanilla`: lo mismo, pero el servidor trata al cliente como vanilla (para ver lo que reciben los clientes sin el mod).
 - `powershell -File tools/upload-curseforge.ps1 -ProjectId <id> [-DryRun]`: sube el jar a CurseForge (token en `CURSEFORGE_TOKEN`).

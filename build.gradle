@@ -18,6 +18,13 @@ loom {
 			programArgs "--quickPlaySingleplayer", "selftest"
 			vmArg "-Dchaostablist.selftest=true"
 		}
+		// Capturas y GIF de demostración: ./gradlew runShowcase y luego python tools/make_showcase.py (deja screenshots/).
+		showcase {
+			client()
+			name "Showcase"
+			programArgs "--quickPlaySingleplayer", "selftest", "--width", "1280", "--height", "720"
+			vmArg "-Dchaostablist.showcase=true"
+		}
 		// Cliente que entra directo al servidor local como "Luis": ./gradlew runJoinServer
 		joinServer {
 			client()

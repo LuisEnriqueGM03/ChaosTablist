@@ -31,5 +31,8 @@ public class ChaosTablistClient implements ClientModInitializer {
 		if (SelfTest.enabled()) {
 			SelfTest.register();
 		}
+		if (Showcase.enabled()) {
+			Showcase.register();
+		}
 	}
 }

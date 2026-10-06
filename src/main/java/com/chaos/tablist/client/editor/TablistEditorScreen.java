@@ -538,7 +538,8 @@ public class TablistEditorScreen extends Screen {
 		hexOk = tip(new GoldButton(pr[0] + pr[2] - 7 - 36, hexY, 36, FH, Lang.tr("button.ok"),
 				b -> pickColor(pickAlpha << 24 | pickRgb)), "button.ok.tip");
 		Component pv = Lang.tr("button.preview");
-		int pvw = font.width(pv) + 10;
+		// Ancho para los dos textos (pasa a "Quitar vista" al activarla).
+		int pvw = Math.max(font.width(pv), font.width(Lang.tr("button.preview_off"))) + 10;
 		hexPreview = tip(new GoldButton(hexOk.getX() - 2 - pvw, hexY, pvw, FH, pv, b -> toggleColorPreview()),
 				"button.preview.tip");
 		updatePopupWidgets();
@@ -2559,6 +2560,50 @@ public class TablistEditorScreen extends Screen {
 	/** Cierra el desplegable sin aceptar (la vista previa se deshace). */
 	public void closePopupForTest() {
 		closePopup();
+	}
+
+	// ----- Para grabar las capturas y GIF de demostración (Showcase)
+
+	/** Como un doble clic en la línea {@code line} del editor de líneas. */
+	public void inlineEditForTest(int line) {
+		selectedLine = line;
+		inlineLine = line;
+		rebuildWidgets();
+		if (inlineBox != null) {
+			inlineBox.moveCursorToEnd(false);
+		}
+	}
+
+	/** Escribe en el campo que tiene el foco, como si se tecleara. */
+	public void typeForTest(String text) {
+		if (getFocused() instanceof EditBox box) {
+			box.insertText(text);
+		}
+	}
+
+	/** Cambia un parámetro en el editor de un efecto (✎). */
+	public void setEffectValueForTest(String key, String value) {
+		editValues.put(key, value);
+		buildEffectEditor();
+	}
+
+	/** Pulsa "Insertar" en el editor de un efecto. */
+	public void insertEffectForTest() {
+		insert(buildEffect(), false, true);
+	}
+
+	/** Elige un color de la paleta con el selector abierto (si la vista previa está activa, se ve al momento). */
+	public void pickPaletteForTest(int rgb) {
+		pickRgb = rgb;
+		syncHex();
+	}
+
+	public void undoForTest() {
+		undo(false);
+	}
+
+	public void setFakePlayersForTest(int count) {
+		fakePlayers = count;
 	}
 
 	@Override
