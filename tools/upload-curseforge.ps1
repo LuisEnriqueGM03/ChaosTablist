@@ -51,8 +51,9 @@ $metadata = @{
 	displayName   = "Chaos Tablist $version ($loaderLabel)"
 	gameVersions  = @($ids)
 	releaseType   = $ReleaseType
-	relations     = @{ projects = $relations }
-} | ConvertTo-Json -Depth 5
+}
+if ($relations.Count -gt 0) { $metadata.relations = @{ projects = $relations } }
+$metadata = $metadata | ConvertTo-Json -Depth 5
 $metaFile = [IO.Path]::GetTempFileName()
 [IO.File]::WriteAllText($metaFile, $metadata, (New-Object Text.UTF8Encoding $false))
 
