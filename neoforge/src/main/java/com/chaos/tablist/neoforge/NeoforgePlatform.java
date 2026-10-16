@@ -2,10 +2,11 @@ package com.chaos.tablist.neoforge;
 
 import java.nio.file.Path;
 import com.chaos.tablist.platform.Platform;
-import net.neoforged.fml.ModList;
-import net.neoforged.fml.loading.FMLPaths;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.network.PacketDistributor;
+import com.chaos.tablist.net.TabPayloads.Message;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 public final class NeoforgePlatform implements Platform {
@@ -13,9 +14,9 @@ public final class NeoforgePlatform implements Platform {
     public Path configDirectory() { return FMLPaths.CONFIGDIR.get(); }
     public boolean isModLoaded(String id) { return ModList.get().isLoaded(id); }
     public int modCount() { return ModList.get().getMods().size(); }
-    public boolean canSend(ServerPlayer player, CustomPacketPayload.Type<?> type) {
-        return player.connection.hasChannel(type.id());
+    public boolean canSend(ServerPlayer player, ResourceLocation type) {
+        return NeoforgeNetwork.CHANNEL.isRemotePresent(player.connection.connection);
     }
-    public void send(ServerPlayer player, CustomPacketPayload payload) { PacketDistributor.sendToPlayer(player, payload); }
-    public void sendToServer(CustomPacketPayload payload) { PacketDistributor.sendToServer(payload); }
+    public void send(ServerPlayer player, Message payload) { NeoforgeNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), payload); }
+    public void sendToServer(Message payload) { NeoforgeNetwork.CHANNEL.sendToServer(payload); }
 }

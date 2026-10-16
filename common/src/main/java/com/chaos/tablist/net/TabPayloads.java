@@ -1,31 +1,22 @@
 package com.chaos.tablist.net;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
-
+import java.util.zip.*;
+import java.util.function.*;
 import com.chaos.tablist.ChaosTablist;
-
 import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-/**
- * Paquetes del mod. La configuración y los valores viajan como JSON comprimido con gzip: la configuración puede
- * ser grande y del cliente al servidor solo caben 32 KB.
- */
+import net.minecraft.resources.ResourceLocation;
+
 public final class TabPayloads {
-
-	/** Límite de un paquete del cliente al servidor (menos un margen para la cabecera). */
-	public static final int MAX_C2S = 32_000;
-	private static final int MAX_S2C = 1_000_000;
-
-	private TabPayloads() {}
-
+    public static final int MAX_C2S = 32_000;
+    private static final int MAX_S2C = 1_000_000;
+    private TabPayloads() {}
+    public interface Message { ResourceLocation type(); }
+    public record Codec<T>(Function<WireBuffer,T> reader, BiConsumer<WireBuffer,T> writer) {
+        public T decode(ByteBuf buffer) { return reader.apply(new WireBuffer(buffer)); }
+        public void encode(ByteBuf buffer, T value) { writer.accept(new WireBuffer(buffer),value); }
+    }
 	public static byte[] gzip(String json) {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		try (GZIPOutputStream out = new GZIPOutputStream(bytes)) {
@@ -47,90 +38,39 @@ public final class TabPayloads {
 		}
 	}
 
-	/** Servidor -> cliente: la configuración del Tab (al entrar y cada vez que cambia). */
-	public record SyncConfig(byte[] data, long revision) implements CustomPacketPayload {
-
-		public static final Type<SyncConfig> TYPE = new Type<>(ChaosTablist.id("sync_config_v2"));
-		public static final StreamCodec<ByteBuf, SyncConfig> CODEC =
-				StreamCodec.composite(ByteBufCodecs.byteArray(MAX_S2C), SyncConfig::data, ByteBufCodecs.VAR_LONG, SyncConfig::revision, SyncConfig::new);
-
-		@Override
-		public Type<? extends CustomPacketPayload> type() {
-			return TYPE;
-		}
-	}
-
-	/** Servidor -> cliente: valores de los placeholders (globales y por jugador), una vez por segundo. */
-	public record SyncValues(byte[] data) implements CustomPacketPayload {
-
-		public static final Type<SyncValues> TYPE = new Type<>(ChaosTablist.id("sync_values_v2"));
-		public static final StreamCodec<ByteBuf, SyncValues> CODEC =
-				ByteBufCodecs.byteArray(MAX_S2C).map(SyncValues::new, SyncValues::data);
-
-		@Override
-		public Type<? extends CustomPacketPayload> type() {
-			return TYPE;
-		}
-	}
-
-	/** Servidor -> cliente: abre el editor con la configuración actual. */
-	public record OpenEditor(byte[] data, boolean chaosRanks, long revision) implements CustomPacketPayload {
-
-		public static final Type<OpenEditor> TYPE = new Type<>(ChaosTablist.id("open_editor_v2"));
-		public static final StreamCodec<ByteBuf, OpenEditor> CODEC = StreamCodec.composite(
-				ByteBufCodecs.byteArray(MAX_S2C), OpenEditor::data,
-				ByteBufCodecs.BOOL, OpenEditor::chaosRanks,
-                ByteBufCodecs.VAR_LONG, OpenEditor::revision,
-				OpenEditor::new);
-
-		@Override
-		public Type<? extends CustomPacketPayload> type() {
-			return TYPE;
-		}
-	}
-
-	/** Servidor -> cliente: un icono PNG propio. Nombre "*" y sin datos = borrar todos. */
-	public record IconData(String name, byte[] png) implements CustomPacketPayload {
-
-		public static final Type<IconData> TYPE = new Type<>(ChaosTablist.id("icon_data"));
-		public static final StreamCodec<ByteBuf, IconData> CODEC = StreamCodec.composite(
-				ByteBufCodecs.stringUtf8(64), IconData::name,
-				ByteBufCodecs.byteArray(MAX_S2C), IconData::png,
-				IconData::new);
-
-		@Override
-		public Type<? extends CustomPacketPayload> type() {
-			return TYPE;
-		}
-	}
-
-	/** Cliente -> servidor: guardar la configuración desde el editor. */
-	public record SaveConfig(byte[] data, long revision, long requestId) implements CustomPacketPayload {
-
-		public static final Type<SaveConfig> TYPE = new Type<>(ChaosTablist.id("save_config_v2"));
-		public static final StreamCodec<ByteBuf, SaveConfig> CODEC =
-				StreamCodec.composite(ByteBufCodecs.byteArray(MAX_C2S), SaveConfig::data,
-                    ByteBufCodecs.VAR_LONG, SaveConfig::revision, ByteBufCodecs.VAR_LONG, SaveConfig::requestId, SaveConfig::new);
-
-		@Override
-		public Type<? extends CustomPacketPayload> type() {
-			return TYPE;
-		}
-	}
-    /** Server -> client: private placeholders, sent only to their owner. */
-    public record SelfValues(byte[] data) implements CustomPacketPayload {
-        public static final Type<SelfValues> TYPE = new Type<>(ChaosTablist.id("self_values_v2"));
-        public static final StreamCodec<ByteBuf, SelfValues> CODEC = ByteBufCodecs.byteArray(MAX_S2C).map(SelfValues::new, SelfValues::data);
-        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    public record SyncConfig(byte[] data, long revision) implements Message {
+        public static final ResourceLocation TYPE = ChaosTablist.id("sync_config_v2");
+        public static final Codec<SyncConfig> CODEC = new Codec<>(b -> new SyncConfig(b.readByteArray(MAX_S2C), b.readVarLong()), (b,p) -> { b.writeByteArray(p.data()); b.writeVarLong(p.revision()); });
+        @Override public ResourceLocation type() { return TYPE; }
     }
-
-    /** Explicit acknowledgement of a durable save, or a reason the draft was rejected. */
-    public record SaveResult(long requestId, boolean success, String reason, long revision) implements CustomPacketPayload {
-        public static final Type<SaveResult> TYPE = new Type<>(ChaosTablist.id("save_result_v2"));
-        public static final StreamCodec<ByteBuf, SaveResult> CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_LONG, SaveResult::requestId, ByteBufCodecs.BOOL, SaveResult::success,
-            ByteBufCodecs.stringUtf8(64), SaveResult::reason, ByteBufCodecs.VAR_LONG, SaveResult::revision, SaveResult::new);
-        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    public record SyncValues(byte[] data) implements Message {
+        public static final ResourceLocation TYPE = ChaosTablist.id("sync_values_v2");
+        public static final Codec<SyncValues> CODEC = new Codec<>(b -> new SyncValues(b.readByteArray(MAX_S2C)), (b,p) -> { b.writeByteArray(p.data()); });
+        @Override public ResourceLocation type() { return TYPE; }
     }
-
+    public record SelfValues(byte[] data) implements Message {
+        public static final ResourceLocation TYPE = ChaosTablist.id("self_values_v2");
+        public static final Codec<SelfValues> CODEC = new Codec<>(b -> new SelfValues(b.readByteArray(MAX_S2C)), (b,p) -> { b.writeByteArray(p.data()); });
+        @Override public ResourceLocation type() { return TYPE; }
+    }
+    public record OpenEditor(byte[] data, boolean chaosRanks, long revision) implements Message {
+        public static final ResourceLocation TYPE = ChaosTablist.id("open_editor_v2");
+        public static final Codec<OpenEditor> CODEC = new Codec<>(b -> new OpenEditor(b.readByteArray(MAX_S2C), b.readBoolean(), b.readVarLong()), (b,p) -> { b.writeByteArray(p.data()); b.writeBoolean(p.chaosRanks()); b.writeVarLong(p.revision()); });
+        @Override public ResourceLocation type() { return TYPE; }
+    }
+    public record IconData(String name, byte[] png) implements Message {
+        public static final ResourceLocation TYPE = ChaosTablist.id("icon_data");
+        public static final Codec<IconData> CODEC = new Codec<>(b -> new IconData(b.readUtf(64), b.readByteArray(MAX_S2C)), (b,p) -> { b.writeUtf(p.name(),64); b.writeByteArray(p.png()); });
+        @Override public ResourceLocation type() { return TYPE; }
+    }
+    public record SaveConfig(byte[] data, long revision, long requestId) implements Message {
+        public static final ResourceLocation TYPE = ChaosTablist.id("save_config_v2");
+        public static final Codec<SaveConfig> CODEC = new Codec<>(b -> new SaveConfig(b.readByteArray(MAX_C2S), b.readVarLong(), b.readVarLong()), (b,p) -> { b.writeByteArray(p.data()); b.writeVarLong(p.revision()); b.writeVarLong(p.requestId()); });
+        @Override public ResourceLocation type() { return TYPE; }
+    }
+    public record SaveResult(long requestId, boolean success, String reason, long revision) implements Message {
+        public static final ResourceLocation TYPE = ChaosTablist.id("save_result_v2");
+        public static final Codec<SaveResult> CODEC = new Codec<>(b -> new SaveResult(b.readVarLong(), b.readBoolean(), b.readUtf(64), b.readVarLong()), (b,p) -> { b.writeVarLong(p.requestId()); b.writeBoolean(p.success()); b.writeUtf(p.reason(),64); b.writeVarLong(p.revision()); });
+        @Override public ResourceLocation type() { return TYPE; }
+    }
 }

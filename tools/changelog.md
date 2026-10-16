@@ -1,4 +1,11 @@
-## NeoForge and graphical retest (2026-10-16)
+## Minecraft 1.20.1 — Chaos Tablist 1.2.0
+
+- Native Fabric, Forge and legacy NeoForge ports for Minecraft 1.20.1. Java 17 bytecode; tested in-game with Java 21.
+- Adapted bounded packet codecs, skin rendering, scoreboard, mouse scrolling, cursor selection and nine-slice GUI artwork.
+- All three loaders pass 85 regression checks, production JAR inspection, in-game editor/network save/conflict recovery and vanilla packet simulation.
+- Forge and NeoForge also pass dedicated initialization up to the EULA check. See VALIDATION.md for scope and limits.
+
+## Earlier Minecraft 1.21.1 port (2026-10-16)
 
 - Added a native NeoForge 21.1 port for Minecraft 1.21.1, including optional typed payloads, lifecycle events and client integration.
 - Forge and NeoForge completed the in-game editor, private data, network save, presets, diagnostics and conflict recovery tests after the graphics driver repair.

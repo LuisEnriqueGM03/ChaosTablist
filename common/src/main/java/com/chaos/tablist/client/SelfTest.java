@@ -18,7 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameRules;
-import net.minecraft.world.scores.DisplaySlot;
+
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 
 /**
@@ -32,6 +32,7 @@ public final class SelfTest {
 	private static int ticks = -1;
 	private static UUID playerId;
     private static long waitingSince;
+    private static boolean openingWorld;
 
 	private SelfTest() {}
 
@@ -41,6 +42,19 @@ public final class SelfTest {
 
 
 	public static void tick(Minecraft mc) {
+        // Open only the isolated development world after the loader reaches the title screen.
+        if (!openingWorld && mc.getSingleplayerServer() == null && mc.screen instanceof net.minecraft.client.gui.screens.TitleScreen) {
+            openingWorld = true;
+            if (java.nio.file.Files.exists(mc.gameDirectory.toPath().resolve("saves/selftest/level.dat"))) {
+                mc.createWorldOpenFlows().loadLevel(new net.minecraft.client.gui.screens.TitleScreen(), "selftest");
+            } else {
+                mc.createWorldOpenFlows().createFreshLevel("selftest",
+                    new net.minecraft.world.level.LevelSettings("ChaosTablist selftest", net.minecraft.world.level.GameType.CREATIVE, false, net.minecraft.world.Difficulty.PEACEFUL, true, new GameRules(), net.minecraft.world.level.WorldDataConfiguration.DEFAULT),
+                    new net.minecraft.world.level.levelgen.WorldOptions(83L, false, false),
+                    registries -> registries.registryOrThrow(net.minecraft.core.registries.Registries.WORLD_PRESET).getOrThrow(net.minecraft.world.level.levelgen.presets.WorldPresets.FLAT).createWorldDimensions());
+            }
+        }
+
 		if (mc.player == null || mc.level == null || mc.getSingleplayerServer() == null) {
 			return;
 		}
@@ -63,9 +77,9 @@ public final class SelfTest {
 					var objective = board.getObjective("selftest_tab");
 					if (objective == null) {
 						objective = board.addObjective("selftest_tab", ObjectiveCriteria.DUMMY, Component.literal("Tab"),
-								ObjectiveCriteria.RenderType.INTEGER, true, null);
+								ObjectiveCriteria.RenderType.INTEGER);
 					}
-					board.setDisplayObjective(DisplaySlot.LIST, objective);
+					board.setDisplayObjective(0, objective);
 				}
 			});
 			case 40 -> {

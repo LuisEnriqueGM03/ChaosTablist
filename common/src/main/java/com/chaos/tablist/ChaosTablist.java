@@ -15,7 +15,7 @@ public final class ChaosTablist {
     public static final String MOD_ID = "chaostablist";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private ChaosTablist() {}
-    public static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath(MOD_ID, path); }
+    public static ResourceLocation id(String path) { return new ResourceLocation(MOD_ID, path); }
     public static void started(MinecraftServer server) {
         ServerValues.markStarted(); TabStore.load(server); TabSorting.clear(server);
     }

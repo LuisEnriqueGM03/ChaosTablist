@@ -1,22 +1,21 @@
 modLoader="javafml"
-loaderVersion="[52,)"
+loaderVersion="[47,)"
 license="MIT"
 [[mods]]
 modId="chaostablist"
 version="${version}"
 displayName="Chaos Tablist"
 authors="Luis Enrique Gil Mayser"
-logoFile="assets/chaostablist/icon.png"
-description='''Animated tab list, rich text, private placeholders, reusable designs and an in-game editor. Works with vanilla clients; install on clients for the advanced view and editor.'''
+description='''Animated tab list, private placeholders, reusable designs and an in-game editor.'''
 [[dependencies.chaostablist]]
 modId="forge"
 mandatory=true
-versionRange="[52.1.16,53)"
+versionRange="[47.4.0,48)"
 ordering="NONE"
 side="BOTH"
 [[dependencies.chaostablist]]
 modId="minecraft"
 mandatory=true
-versionRange="[1.21.1,1.21.2)"
+versionRange="[1.20.1,1.20.2)"
 ordering="NONE"
 side="BOTH"

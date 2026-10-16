@@ -43,13 +43,14 @@ final class DesignLibraryScreen extends Screen {
         addRenderableWidget(new GoldButton(x + 265, height - 66, 35, 20, Component.literal(">"), b -> { page++; rebuildWidgets(); })).active = (page + 1) * visible < files.size();
         addRenderableWidget(new GoldButton(x, height - 42, 300, 20, Lang.tr("button.close"), b -> onClose()));
     }
-    @Override public void renderBackground(GuiGraphics g, int mx, int my, float delta) {
-        renderTransparentBackground(g);
-        g.blitSprite(com.chaos.tablist.ChaosTablist.id("panel"), width / 2 - 160, 4, 320, height - 8);
+    @Override public void renderBackground(GuiGraphics g) {
+        super.renderBackground(g);
+        com.chaos.tablist.client.LegacyGui.blitSprite(g, com.chaos.tablist.ChaosTablist.id("panel"), width / 2 - 160, 4, 320, height - 8);
     }
     private void select(TabConfig config) { apply.accept(config); minecraft.setScreen(editor); }
     @Override public void onClose() { minecraft.setScreen(editor); }
     @Override public void render(GuiGraphics g, int mx, int my, float delta) {
+        renderBackground(g);
         super.render(g, mx, my, delta);
         g.drawCenteredString(font, title, width / 2, 14, 0xFFE8B23A);
         if (!message.getString().isEmpty()) g.drawCenteredString(font, message, width / 2, height - 16, 0xFF5555);

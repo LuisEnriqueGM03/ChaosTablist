@@ -23,19 +23,19 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.resources.PlayerSkin;
+
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.numbers.StyledFormat;
+
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.scores.DisplaySlot;
+
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.PlayerTeam;
-import net.minecraft.world.scores.ReadOnlyScoreInfo;
-import net.minecraft.world.scores.ScoreHolder;
+
+
 import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 
@@ -46,16 +46,16 @@ import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 public final class TabRenderer {
 
 	/** Un jugador de la lista (de verdad o de ejemplo en la vista previa). */
-	public record Entry(UUID id, String name, PlayerSkin skin, GameType mode, int latency, Map<String, String> values,
+	public record Entry(UUID id, String name, ResourceLocation skin, GameType mode, int latency, Map<String, String> values,
 			boolean self, @Nullable PlayerInfo info) {}
 
 	private static final ResourceLocation[] PING = {
-			ResourceLocation.withDefaultNamespace("icon/ping_unknown"),
-			ResourceLocation.withDefaultNamespace("icon/ping_1"),
-			ResourceLocation.withDefaultNamespace("icon/ping_2"),
-			ResourceLocation.withDefaultNamespace("icon/ping_3"),
-			ResourceLocation.withDefaultNamespace("icon/ping_4"),
-			ResourceLocation.withDefaultNamespace("icon/ping_5")};
+			new ResourceLocation("icon/ping_unknown"),
+			new ResourceLocation("icon/ping_1"),
+			new ResourceLocation("icon/ping_2"),
+			new ResourceLocation("icon/ping_3"),
+			new ResourceLocation("icon/ping_4"),
+			new ResourceLocation("icon/ping_5")};
 
 	public static final int MAX_FAKES = 20;
 	private static final String[] FAKE_NAMES = {"Steve", "Alex", "Notch", "Herobrine", "Jeb_", "Dinnerbone", "Grumm",
@@ -92,7 +92,7 @@ public final class TabRenderer {
 		}
 		PlayerTabOverlay overlay = mc.gui.getTabList();
 		Scoreboard board = mc.level.getScoreboard();
-		Objective objective = board.getDisplayObjective(DisplaySlot.LIST);
+		Objective objective = board.getDisplayObjective(0);
 		boolean down = mc.options.keyPlayerList.isDown();
 		boolean allowed = !mc.isLocalServer() || cfg.layout.showInSingleplayer
 				|| mc.getConnection().getListedOnlinePlayers().size() > 1 || objective != null;
@@ -143,7 +143,7 @@ public final class TabRenderer {
 			values.putIfAbsent("player", info.getProfile().getName());
 			values.put("ping", String.valueOf(info.getLatency()));
 			values.putIfAbsent("gamemode", info.getGameMode().getName());
-			list.add(new Entry(id, info.getProfile().getName(), info.getSkin(), info.getGameMode(), info.getLatency(),
+			list.add(new Entry(id, info.getProfile().getName(), info.getSkinLocation(), info.getGameMode(), info.getLatency(),
 					values, id.equals(self), info));
 		}
 		if (testFakes > 0) {
@@ -174,7 +174,7 @@ public final class TabRenderer {
             Map<String, String> values = new HashMap<>(ClientState.player(id));
             values.putIfAbsent("player", info.getProfile().getName());
             values.put("ping", String.valueOf(info.getLatency()));
-            result.add(new Entry(id, info.getProfile().getName(), info.getSkin(), info.getGameMode(), info.getLatency(), values,
+            result.add(new Entry(id, info.getProfile().getName(), info.getSkinLocation(), info.getGameMode(), info.getLatency(), values,
                 mc.player != null && id.equals(mc.player.getUUID()), info));
         }
         result.sort(vanillaComparator());
@@ -198,7 +198,7 @@ public final class TabRenderer {
 			v.put("health", String.valueOf(20 - i));
 			v.put("level", String.valueOf(i * 7));
 			v.put("op", String.valueOf(i == 0));
-			list.add(new Entry(id, name, net.minecraft.client.resources.DefaultPlayerSkin.get(id), mode, ping, v, false, null));
+			list.add(new Entry(id, name, net.minecraft.client.resources.DefaultPlayerSkin.getDefaultSkin(id), mode, ping, v, false, null));
 		}
 		return list;
 	}
@@ -290,13 +290,12 @@ public final class TabRenderer {
 			}
 			Component score = null;
 			if (objective != null && board != null && !l.objectiveStyle.equals("hidden") && e.mode() != GameType.SPECTATOR) {
-				ReadOnlyScoreInfo info = board.getPlayerScoreInfo(ScoreHolder.forNameOnly(e.name()), objective);
-				int value = info == null ? 0 : info.value();
+				int value = board.hasPlayerScore(e.name(), objective) ? board.getOrCreatePlayerScore(e.name(), objective).getScore() : 0;
 				if (hearts || l.objectiveStyle.equals("hearts")) {
 					score = Component.literal("❤ " + (hearts ? String.format(Locale.ROOT, "%.1f", value / 2f) : value))
-							.withColor(0xFF5555);
+							.withStyle(style -> style.withColor(0xFF5555));
 				} else {
-					score = ReadOnlyScoreInfo.safeFormatValue(info, objective.numberFormatOrDefault(StyledFormat.PLAYER_LIST_DEFAULT));
+					score = Component.literal(Integer.toString(value)).withStyle(net.minecraft.ChatFormatting.YELLOW);
 				}
 			}
 			List<Glyph> ping = number ? Evaluator.eval(cfg.ping.format, ctx) : List.of();
@@ -416,7 +415,7 @@ public final class TabRenderer {
 					hat = player == null || player.isModelPartShown(PlayerModelPart.HAT);
 					upsideDown = player != null && net.minecraft.client.renderer.entity.LivingEntityRenderer.isEntityUpsideDown(player);
 				}
-				PlayerFaceRenderer.draw(g, row.entry().skin().texture(), cx, ty, 8, hat, upsideDown);
+				PlayerFaceRenderer.draw(g, row.entry().skin(), cx, ty, 8, hat, upsideDown);
 				RenderSystem.setShaderColor(1, 1, 1, 1);
 				cx += 10;
 			}
@@ -428,7 +427,7 @@ public final class TabRenderer {
 					g.pose().pushPose();
 					g.pose().translate(0, 0, 100);
 					RenderSystem.setShaderColor(1, 1, 1, alpha);
-					g.blitSprite(pingSprite(row.entry().latency()), right - 10, ty, 10, 8);
+					com.chaos.tablist.client.LegacyGui.blitSprite(g, pingSprite(row.entry().latency()), right - 10, ty, 10, 8);
 					RenderSystem.setShaderColor(1, 1, 1, 1);
 					g.pose().popPose();
 				}

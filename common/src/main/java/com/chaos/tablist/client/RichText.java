@@ -227,9 +227,9 @@ public final class RichText {
 				Minecraft mc = Minecraft.getInstance();
 				PlayerInfo info = mc.getConnection() == null ? null : mc.getConnection().getPlayerInfo(gl.text);
 				if (info != null) {
-					PlayerFaceRenderer.draw(g, info.getSkin(), 0, 0, 8);
+					PlayerFaceRenderer.draw(g, info.getSkinLocation(), 0, 0, 8);
 				} else {
-					PlayerFaceRenderer.draw(g, net.minecraft.client.resources.DefaultPlayerSkin.get(java.util.UUID.nameUUIDFromBytes(gl.text.getBytes())), 0, 0, 8);
+					PlayerFaceRenderer.draw(g, net.minecraft.client.resources.DefaultPlayerSkin.getDefaultSkin(java.util.UUID.nameUUIDFromBytes(gl.text.getBytes())), 0, 0, 8);
 				}
 			}
 			case ITEM -> {

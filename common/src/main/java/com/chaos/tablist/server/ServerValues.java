@@ -75,8 +75,8 @@ public final class ServerValues {
 		g.put("online", String.valueOf(server.getPlayerCount()));
 		g.put("max_players", String.valueOf(server.getMaxPlayers()));
 
-		float mspt = server.getCurrentSmoothedTickTime();
-		float rate = server.tickRateManager().tickrate();
+		float mspt = server.getAverageTickTime();
+		float rate = 20f;
 		float tps = mspt <= 0 ? rate : Math.min(rate, 1000f / mspt);
 		g.put("tps", String.format(Locale.ROOT, "%.1f", tps));
 		g.put("mspt", String.format(Locale.ROOT, "%.1f", mspt));
@@ -154,7 +154,7 @@ public final class ServerValues {
 		Map<String, String> v = new HashMap<>();
 		v.put("player", player.getScoreboardName());
 		v.put("uuid", player.getStringUUID());
-		v.put("ping", String.valueOf(player.connection.latency()));
+		v.put("ping", String.valueOf(player.latency));
 		ServerLevel level = player.serverLevel();
 		v.put("world", level.dimension().location().getPath());
 		v.put("dimension", level.dimension().location().toString());
@@ -175,7 +175,7 @@ public final class ServerValues {
 		long idle = net.minecraft.Util.getMillis() - player.getLastActionTime();
 		v.put("afk", String.valueOf(idle > 5 * 60 * 1000));
 		v.put("op", String.valueOf(server.getPlayerList().isOp(player.getGameProfile())));
-		PlayerTeam team = player.getTeam();
+		var team = player.getTeam();
 		v.put("team", team == null ? "" : team.getName());
 		v.put("display_name", player.getDisplayName().getString());
 		v.put("xp", String.valueOf(player.totalExperience));
@@ -195,7 +195,7 @@ public final class ServerValues {
 		v.put("chunk_z", String.valueOf(player.chunkPosition().z));
 		ItemStack held = player.getMainHandItem();
 		v.put("held_item", held.isEmpty() ? "" : held.getHoverName().getString());
-		v.put("language", player.clientInformation().language());
+		v.put("language", ((PlayerLocale) player).chaostablist$language());
 		v.put("jumps", String.valueOf(player.getStats().getValue(Stats.CUSTOM.get(Stats.JUMP))));
 		v.put("fish", String.valueOf(player.getStats().getValue(Stats.CUSTOM.get(Stats.FISH_CAUGHT))));
 		int walkedCm = player.getStats().getValue(Stats.CUSTOM.get(Stats.WALK_ONE_CM))
@@ -205,7 +205,7 @@ public final class ServerValues {
 
 		ChaosRanksCompat.Rank rank = ChaosRanksCompat.rankOf(player);
 		v.put("has_rank", String.valueOf(rank != null));
-		v.put("rank", rank == null ? "" : TextContext.JSON_MARK + Component.Serializer.toJson(rank.badge(), server.registryAccess()));
+		v.put("rank", rank == null ? "" : TextContext.JSON_MARK + Component.Serializer.toJson(rank.badge()));
 		v.put("rank_name", rank == null ? "" : rank.label());
 		v.put("rank_id", rank == null ? "" : rank.id());
 		v.put("rank_priority", String.valueOf(rank == null ? 0 : rank.priority()));

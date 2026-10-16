@@ -1,12 +1,12 @@
-# Chaos Tablist 1.2.0 — Minecraft 1.21.1
+# Chaos Tablist 1.2.0 — Minecraft 1.20.1
 
-Tres JAR independientes: Fabric, Forge y NeoForge. Requiere Java 21; Fabric necesita también Fabric API. Instala solamente el archivo de tu cargador.
+Tres archivos independientes: **Fabric, Forge y NeoForge legacy**. Bytecode Java 17; pruebas en juego con Java 21. Fabric necesita Fabric API para 1.20.1. Instala solo el JAR de tu cargador.
 
-- Datos privados enviados solo a su propietario, guardado confirmado y control de revisiones.
-- Recuperación de archivos, límites de JSON/PNG y mejoras de rendimiento.
-- Ctrl+S, diseños reutilizables, importación/exportación, aviso de cambios y diagnósticos del editor.
-- Implementación común y adaptadores nativos por cargador, con 162 iconos y ocho idiomas.
+- Port completo de red, skins, scoreboard, interfaz y selección de texto a las APIs de 1.20.1.
+- Tab animado, 162 iconos, ocho idiomas y editor con vista previa.
+- Datos privados por jugador, guardado confirmado y control de revisiones y conflictos.
+- Recuperación de configuración, límites de paquetes/PNG y biblioteca de diseños importables.
 
-Los tres compilan y pasan 82 comprobaciones y la inspección de sus JAR. Fabric y NeoForge pasaron las autopruebas normales y la simulación vanilla. Forge pasó Tab, editor, guardado por red y conflictos; se distribuye como **beta** porque su simulación vanilla falló al inicializar el servidor integrado. El fallo anterior de AMD no se reprodujo tras reparar el controlador. Consulta VALIDATION.md para límites y reproducción.
+Los tres cargadores compilan y pasan **85 comprobaciones**, la inspección de sus JAR y las autopruebas normales y de simulación vanilla dentro del juego, incluido el guardado por red. Forge y NeoForge también inicializan el servidor dedicado hasta la comprobación de EULA. Consulta VALIDATION.md para límites y reproducción.
 
-Ramas: fabric-1.21.1, forge-1.21.1 y neoforge-1.21.1. Servidor y cliente deben usar 1.2.0 para la vista avanzada y el editor. Los JAR y sus fuentes se publican por separado; SHA256SUMS.txt permite verificar las descargas.
+Ramas: fabric-1.20.1, forge-1.20.1 y neoforge-1.20.1. Se adjuntan los JAR, fuentes y SHA256SUMS.txt. Servidor y cliente deben usar 1.2.0 para el editor y la vista avanzada. NeoForge 1.20.1 conserva la API histórica de Forge.

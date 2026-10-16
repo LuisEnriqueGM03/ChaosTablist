@@ -11,4 +11,6 @@ public interface EditBoxAccessor {
 
 	@Accessor("displayPos")
 	int chaostablist$displayPos();
+    @Accessor("bordered") boolean chaostablist$bordered();
+    @Accessor("highlightPos") int chaostablist$highlightPos();
 }

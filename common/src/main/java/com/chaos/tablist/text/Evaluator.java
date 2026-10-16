@@ -67,11 +67,9 @@ public final class Evaluator {
 			if (count >= MAX_GLYPHS) {
 				break;
 			}
-			switch (n) {
-				case Node.Text text -> text(text.text(), out);
-				case Node.Placeholder p -> placeholder(p.key(), out);
-				case Node.Tag tag -> out.addAll(tag(tag));
-			}
+            if (n instanceof Node.Text text) text(text.text(), out);
+            else if (n instanceof Node.Placeholder p) placeholder(p.key(), out);
+            else if (n instanceof Node.Tag tag) out.addAll(tag(tag));
 		}
 		return out;
 	}
@@ -148,7 +146,7 @@ public final class Evaluator {
 			return cached;
 		}
 		try {
-			Component c = Component.Serializer.fromJson(json, ctx.registries());
+			Component c = Component.Serializer.fromJson(json);
 			if (JSON_CACHE.size() > 512) {
 				JSON_CACHE.clear();
 			}

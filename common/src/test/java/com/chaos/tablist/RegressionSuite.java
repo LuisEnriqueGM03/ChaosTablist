@@ -46,7 +46,7 @@ public final class RegressionSuite {
     }
 
     public static void main(String[] args) throws Exception {
-        config(); text(); compression(); files(); privacy(); history(); saves(); png(); presets(); platform();
+        config(); text(); compression(); files(); privacy(); history(); saves(); png(); presets(); platform(); legacyWireLimits();
         System.out.println("Chaos Tablist: " + checks + " regression checks passed");
     }
 
@@ -124,6 +124,23 @@ public final class RegressionSuite {
             var decoded = TabPayloads.SaveConfig.CODEC.decode(buffer);
             check(decoded.revision() == 123 && decoded.requestId() == 456 && decoded.data()[1] == 8, "Save codec preserves revision and request ID");
         } finally { buffer.release(); }
+    }
+
+    private static void rejectsWire(Runnable action, String description) {
+        try { action.run(); }
+        catch (IllegalArgumentException expected) { checks++; return; }
+        throw new AssertionError(description);
+    }
+    private static void legacyWireLimits() {
+        var raw = io.netty.buffer.Unpooled.buffer();
+        try {
+            raw.writeBytes(new byte[] {(byte)0x81,(byte)0xFA,0x01});
+            rejectsWire(() -> TabPayloads.SaveConfig.CODEC.decode(raw), "Legacy C2S rejects declared oversized arrays before allocation");
+            raw.clear(); raw.writeBytes(new byte[] {(byte)0xC1,(byte)0x84,0x3D});
+            rejectsWire(() -> TabPayloads.SyncConfig.CODEC.decode(raw), "Legacy S2C rejects declared oversized arrays before allocation");
+            raw.clear();
+            rejectsWire(() -> TabPayloads.IconData.CODEC.encode(raw, new TabPayloads.IconData("a".repeat(65),new byte[0])), "Legacy icon names retain the UTF-8 length cap");
+        } finally { raw.release(); }
     }
 
     private static void files() throws Exception {

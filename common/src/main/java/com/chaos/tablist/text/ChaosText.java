@@ -60,11 +60,9 @@ public final class ChaosText {
 
 	private static void stripInto(List<Node> nodes, StringBuilder sb) {
 		for (Node n : nodes) {
-			switch (n) {
-				case Node.Text t -> sb.append(t.text());
-				case Node.Placeholder p -> sb.append('{').append(p.key()).append('}');
-				case Node.Tag t -> stripInto(t.children(), sb);
-			}
+            if (n instanceof Node.Text t) sb.append(t.text());
+            else if (n instanceof Node.Placeholder p) sb.append('{').append(p.key()).append('}');
+            else if (n instanceof Node.Tag t) stripInto(t.children(), sb);
 		}
 	}
 

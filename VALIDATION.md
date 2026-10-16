@@ -1,35 +1,31 @@
-# Validación de Chaos Tablist 1.2.0 — Minecraft 1.21.1
+# Validación de Chaos Tablist 1.2.0 para Minecraft 1.20.1
 
-Actualizada el 16 de octubre de 2026. Java 21. Fabric Loader 0.19.5 / Fabric API 0.116.17+1.21.1, Forge 52.1.16 y NeoForge 21.1.257.
+16 de octubre de 2026. Fabric Loader 0.19.5 / Fabric API 0.92.6+1.20.1, Forge 47.4.0 y NeoForge legacy 47.1.106.
 
 ## Resultados
 
 | Comprobación | Fabric | Forge | NeoForge |
 |---|---|---|---|
-| Compilación del JAR y fuentes | PASS | PASS | PASS |
-| Regresiones e aislamiento de cargadores | 82/82 | 82/82 | 82/82 |
-| Metadatos, Java 21, 162 iconos y ocho idiomas | PASS | PASS | PASS |
+| JAR de producción y fuentes | PASS | PASS | PASS |
+| Regresiones, límites de paquetes y aislamiento | 85/85 | 85/85 | 85/85 |
+| Metadatos, bytecode Java 17, 162 iconos y ocho idiomas | PASS | PASS | PASS |
 | Tab, editor, datos privados y guardado por red | PASS | PASS | PASS |
-| Diseños, aviso de cambios, diagnósticos y recuperación de conflictos | PASS | PASS | PASS |
-| Simulación de paquetes vanilla y guardado confirmado | PASS | Falló; pendiente | PASS |
-| Arranque dedicado --initSettings | No ejecutado | PASS | PASS |
+| Diseños, cierre con cambios, diagnósticos y recuperación de conflictos | PASS | PASS | PASS |
+| Simulación de paquetes vanilla y guardado confirmado | PASS | PASS | PASS |
+| Arranque dedicado --initSettings | No ejecutado | PASS hasta EULA | PASS hasta EULA |
 
-Forge y NeoForge completaron sus autopruebas gráficas después de la reparación del controlador. El bloqueo anterior en AMD atio6axx.dll no se reprodujo. Se revisaron capturas reales del Tab de Forge y del editor de NeoForge.
+Las pruebas gráficas se ejecutaron con Java 21 sobre mundos planos creados exclusivamente en <cargador>/run/saves/selftest. El compilador emite bytecode Java 17 y usa las APIs de esa versión de Java; no se ejecutó una JVM 17 independiente. Los recursos usan pack_format 15. Se revisaron capturas reales del Tab y del editor.
 
-La prueba adicional runSelftestVanilla de Forge falló dos veces al iniciar el servidor integrado: la configuración no había recibido la carga del mundo y Forge lanzó «Can not retrieve LootModifierManager until resources have loaded once». La autoprueba normal de Forge sí completó el guardado y los conflictos. No se ha determinado la causa del fallo adicional ni se ha certificado la compatibilidad vanilla de Forge; su archivo se publica como beta. El arranque manual desde menú se inició, pero no completó la autoprueba. No confundir un proceso que termina correctamente sin entrar al mundo con una prueba aprobada.
+El protocolo usa buffers acotados y los canales propios de 1.20.1: Fabric Networking y SimpleChannel para Forge y NeoForge. Los límites de arrays se verifican antes de asignar memoria. La prueba cubre longitudes excesivas en C2S/S2C y nombres de iconos, además de revisión, permisos de interfaz, persistencia y conflictos. NeoForge 1.20.1 conserva net.minecraftforge y META-INF/mods.toml; no debe confundirse con la API NeoForge 21.x.
 
-La vía vanilla se simula mediante una opción de desarrollo; no sustituye una sesión con un cliente vanilla independiente. La prueba dedicada solo inicializa archivos: no acepta la EULA ni carga un mundo. No se han realizado pruebas multijugador independientes, benchmarks ni pruebas con Chaos Ranks instalado.
+Se adaptaron el dibujo de nueve secciones, los iconos de ping, las skins, el scoreboard, el scroll del ratón, la selección de texto y la captura del idioma del jugador. El mixin del HUD se ajusta al render de 1.20.1. El mundo de pruebas se abre desde el menú inicial después de cargar el mod; no usa Quick Play.
 
-## Estructura y reproducción
+## Reproducción y límites
 
-common/ contiene lógica, configuración, red, editor y recursos. Cada cargador tiene su adaptador nativo, metadatos y proveedor de plataforma. Los JAR no mezclan APIs de cargadores. NeoForge usa payloads opcionales versionados; Forge usa su canal nativo opcional.
+- Compilación: gradlew -Ploader=fabric build, -Ploader=forge build o -Ploader=neoforge build; en Windows gradlew.bat.
+- Gradle 9.7.1, compilador Java 21 con --release 17. Loom necesita JVM 25 para el proceso Gradle; ModDev legacy admite la configuración usada con JVM 25.
+- Autoprueba normal: :fabric:runSelftest, :forge:runSelftest o :neoforge:runSelftest. Crea automáticamente su mundo plano si falta.
+- Vía vanilla simulada: runSelftestVanilla del mismo cargador.
+- Inspección de JAR: python tools/validate-ports.py.
 
-- Fabric: gradlew -Ploader=fabric build (Gradle 9.7.1 y JVM 25 para Loom; compilador/juego Java 21).
-- Forge: gradlew-forge build, JAVA_HOME en Java 21 (Gradle 8.12).
-- NeoForge: gradlew-neoforge build, JAVA_HOME en Java 21 (Gradle 8.12).
-- En Windows, añadir .bat al ejecutable.
-- Autopruebas: :fabric:runSelftest, :forge:runSelftest o :neoforge:runSelftest. Requieren una copia del mundo de desarrollo selftest en <cargador>/run/saves/selftest.
-- Simulación vanilla: runSelftestVanilla. Forge admite -PmanualWorld para entrar desde el menú; esta ruta queda pendiente de verificación.
-- Inspección de los tres artefactos: python tools/validate-ports.py.
-
-Las pruebas modificaron solo copias de mundos de desarrollo. La opción local que desactiva la ventana inicial de Forge no está incluida en los JAR ni en la distribución. Los errores de disco y JSON de las regresiones son casos negativos intencionados.
+La simulación vanilla no sustituye una sesión con un cliente sin mod independiente. El editor siempre necesita el mod en cliente. El arranque dedicado no acepta la EULA ni comprueba un mundo activo. No se hicieron benchmarks, pruebas con dos clientes independientes, Chaos Ranks instalado ni lanzamiento separado del JAR de producción en un launcher externo. Los errores deliberados de disco/JSON de las regresiones forman parte de las pruebas de recuperación. Los avisos de Realms de las cuentas de desarrollo no afectaron a las pruebas locales.

@@ -29,7 +29,7 @@ public final class ForgeTablist {
     private void commands(RegisterCommandsEvent event) { TabCommand.register(event.getDispatcher()); }
     private void started(ServerStartedEvent event) { ChaosTablist.started(event.getServer()); }
     private void stopped(ServerStoppedEvent event) { ChaosTablist.stopped(); }
-    private void tick(TickEvent.ServerTickEvent.Post event) { TabTicker.tick(event.getServer()); }
+    private void tick(TickEvent.ServerTickEvent event) { if(event.phase == TickEvent.Phase.END) TabTicker.tick(event.getServer()); }
     private void joined(PlayerEvent.PlayerLoggedInEvent event) { if (event.getEntity() instanceof ServerPlayer player) TabTicker.join(player); }
     private void left(PlayerEvent.PlayerLoggedOutEvent event) { if (event.getEntity() instanceof ServerPlayer player) TabTicker.leave(player); }
 }

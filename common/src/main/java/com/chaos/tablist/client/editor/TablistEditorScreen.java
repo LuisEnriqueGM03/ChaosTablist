@@ -52,7 +52,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
-import net.minecraft.world.scores.DisplaySlot;
+
 
 /**
  * Editor del Tab (/tablist): pestañas a la izquierda y la vista previa en vivo a la derecha, con jugadores
@@ -286,7 +286,7 @@ public class TablistEditorScreen extends Screen {
 	/** Tooltip de vanilla con la explicación de {@code key} (sale al dejar el ratón encima un momento). */
 	private <T extends AbstractWidget> T tip(T widget, String key) {
 		widget.setTooltip(Tooltip.create(Lang.tr(key)));
-		widget.setTooltipDelay(Duration.ofMillis(300));
+		widget.setTooltipDelay(300);
 		return widget;
 	}
 
@@ -298,7 +298,7 @@ public class TablistEditorScreen extends Screen {
 		box.setTextColor(FIELD_TEXT);
 		box.setMaxLength(maxLength);
 		box.setValue(value == null ? "" : value);
-		box.moveCursorToStart(false);
+		box.moveCursorToStart();
 		if (template) {
 			box.setFormatter((text, offset) -> highlight(box.getValue(), offset, text));
 			templateBoxes.add(box);
@@ -630,7 +630,7 @@ public class TablistEditorScreen extends Screen {
             });
             button(x + half + 2, y, half, FH, Lang.tr("button.export_design"), () -> {
                 try { var path = DesignLibrary.export(draft); status(Lang.tr("msg.design_exported", path.getFileName().toString())); }
-                catch (Exception e) { status(Lang.tr("msg.design_failed").withColor(0xFF5555)); }
+                catch (Exception e) { status(Lang.tr("msg.design_failed").withStyle(style -> style.withColor(0xFF5555))); }
             });
         }));
         rows.add(hintRow(chaosRanks ? Lang.tr("screen.chaosranks_on") : Lang.tr("screen.chaosranks_off"), w));
@@ -813,7 +813,7 @@ public class TablistEditorScreen extends Screen {
 		List<Component> items = new ArrayList<>();
 		for (UUID id : ids) {
 			boolean custom = draft.players.containsKey(id.toString());
-			items.add(Component.literal((custom ? "✎ " : "") + people.get(id)).withColor(custom ? 0xFFC300 : 0xFFFFFF));
+			items.add(Component.literal((custom ? "✎ " : "") + people.get(id)).withStyle(style -> style.withColor(custom ? 0xFFC300 : 0xFFFFFF)));
 		}
 		int[] f = sideList(c, items, ids.indexOf(selectedPlayer), i -> {
 			selectedPlayer = ids.get(i);
@@ -1264,7 +1264,7 @@ public class TablistEditorScreen extends Screen {
             byte[] data = TabPayloads.gzip(clean.toJson());
             if (data.length > TabPayloads.MAX_C2S) {
                 autoApply = false;
-                status(Lang.tr("msg.too_big", data.length / 1024).withColor(0xFF5555));
+                status(Lang.tr("msg.too_big", data.length / 1024).withStyle(style -> style.withColor(0xFF5555)));
                 closeAfterSave = false;
                 return;
             }
@@ -1276,8 +1276,8 @@ public class TablistEditorScreen extends Screen {
             autoApply = false; closeAfterSave = false;
             if (saves.pending() != null) {
                 saves.abort("network");
-                status(Lang.tr("msg.save_network").withColor(0xFF5555));
-            } else status(Lang.tr("msg.invalid").withColor(0xFF5555));
+                status(Lang.tr("msg.save_network").withStyle(style -> style.withColor(0xFF5555)));
+            } else status(Lang.tr("msg.invalid").withStyle(style -> style.withColor(0xFF5555)));
         }
     }
 
@@ -1287,11 +1287,11 @@ public class TablistEditorScreen extends Screen {
             original = TabConfig.fromJson(saves.savedJson());
             dirty = !draft.toJson().equals(pendingDraftJson);
             if (!dirty) { draft = original.copy(); settleHistory(); TabRenderer.invalidate(); }
-            status(Lang.tr("msg.saved").withColor(0x55FF55));
+            status(Lang.tr("msg.saved").withStyle(style -> style.withColor(0x55FF55)));
             if (closeAfterSave && !dirty) { minecraft.setScreen(null); return; }
         } else {
             autoApply = false;
-            status(Lang.tr("msg.save_" + result.reason()).withColor(0xFF5555));
+            status(Lang.tr("msg.save_" + result.reason()).withStyle(style -> style.withColor(0xFF5555)));
         }
         closeAfterSave = false;
         rebuildWidgets();
@@ -1302,7 +1302,7 @@ public class TablistEditorScreen extends Screen {
         if (dirty) {
             remoteConflict = true;
             autoApply = false;
-            status(Lang.tr("msg.save_conflict").withColor(0xFF5555));
+            status(Lang.tr("msg.save_conflict").withStyle(style -> style.withColor(0xFF5555)));
         } else {
             original = config.copy(); draft = config.copy();
             saves = new EditorSaveState(revision, draft.toJson());
@@ -1349,7 +1349,7 @@ public class TablistEditorScreen extends Screen {
         if (history.settling(Util.getMillis())) settleHistory();
         if (saves.timedOut(Util.getMillis())) {
             autoApply = false; closeAfterSave = false;
-            status(Lang.tr("msg.save_timeout").withColor(0xFF5555));
+            status(Lang.tr("msg.save_timeout").withStyle(style -> style.withColor(0xFF5555)));
         }
 	}
 
@@ -1466,7 +1466,7 @@ public class TablistEditorScreen extends Screen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
 		if (popup == Popup.EFFECT_EDIT) {
 			effectScroll = Math.max(0, effectScroll - (int) Math.signum(scrollY));
 			buildEffectEditor();
@@ -1498,7 +1498,7 @@ public class TablistEditorScreen extends Screen {
 				return true;
 			}
 		}
-		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+		return super.mouseScrolled(mouseX, mouseY, scrollY);
 	}
 
 	private void click() {
@@ -1791,7 +1791,7 @@ public class TablistEditorScreen extends Screen {
 		box.setTextColor(FIELD_TEXT);
 		box.setMaxLength(max);
 		box.setValue(value);
-		box.moveCursorToStart(false);
+		box.moveCursorToStart();
 		box.setResponder(onChange);
 		popupWidgets.add(box);
 		return box;
@@ -1903,7 +1903,7 @@ public class TablistEditorScreen extends Screen {
 
 	private void renderEffectEditor(GuiGraphics g, int[] r, int mouseX, int mouseY) {
 		for (int[] f : popupFields) {
-			g.blitSprite(INSET, f[0], f[1], f[2], f[3]);
+			com.chaos.tablist.client.LegacyGui.blitSprite(g, INSET, f[0], f[1], f[2], f[3]);
 		}
 		for (Label l : popupLabels) {
 			drawLabel(g, l);
@@ -1992,7 +1992,7 @@ public class TablistEditorScreen extends Screen {
 		}
 		if (dragBox != null && button == 0) {
 			// Seleccionar arrastrando: el inicio se queda donde se hizo clic.
-			dragBox.moveCursorTo(textIndexAt(dragBox, mouseX), true);
+			moveCursor(dragBox, textIndexAt(dragBox, mouseX), true);
 			return true;
 		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -2029,7 +2029,7 @@ public class TablistEditorScreen extends Screen {
 	private int textIndexAt(EditBox box, double mouseX) {
 		String value = box.getValue();
 		int from = Mth.clamp(((EditBoxAccessor) box).chaostablist$displayPos(), 0, value.length());
-		int rel = (int) mouseX - box.getX() - (box.isBordered() ? 4 : 0);
+		int rel = (int) mouseX - box.getX() - (((EditBoxAccessor) box).chaostablist$bordered() ? 4 : 0);
 		if (rel < 0) {
 			return Math.max(0, from - 1);
 		}
@@ -2041,6 +2041,12 @@ public class TablistEditorScreen extends Screen {
 	}
 
 	/** Selecciona la palabra (o la etiqueta &lt;...&gt; / el dato {...}) donde está el cursor. */
+    private static void moveCursor(EditBox box, int position, boolean select) {
+        int anchor = ((EditBoxAccessor) box).chaostablist$highlightPos();
+        box.moveCursorTo(position);
+        box.setHighlightPos(select ? anchor : position);
+    }
+
 	private static void selectWord(EditBox box) {
 		String v = box.getValue();
 		int c = Mth.clamp(box.getCursorPosition(), 0, v.length());
@@ -2048,8 +2054,8 @@ public class TablistEditorScreen extends Screen {
 		int close = v.indexOf('>', Math.max(0, c - 1));
 		int lastClose = v.lastIndexOf('>', Math.max(0, c - 1));
 		if (open >= 0 && close >= 0 && (lastClose < open || lastClose == close) && open < c && c <= close + 1) {
-			box.moveCursorTo(open, false);
-			box.moveCursorTo(close + 1, true);
+			moveCursor(box, open, false);
+			moveCursor(box, close + 1, true);
 			return;
 		}
 		int start = c;
@@ -2063,8 +2069,8 @@ public class TablistEditorScreen extends Screen {
 		if (start == end) {
 			return;
 		}
-		box.moveCursorTo(start, false);
-		box.moveCursorTo(end, true);
+		moveCursor(box, start, false);
+		moveCursor(box, end, true);
 	}
 
 	private static boolean isWordChar(char ch) {
@@ -2107,18 +2113,19 @@ public class TablistEditorScreen extends Screen {
 	// Dibujo
 
 	@Override
-	public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-		renderTransparentBackground(g);
-		g.blitSprite(PANEL, 0, 0, width, height);
-		g.blitSprite(INSET, M, contentTop(), leftW(), bottomY() - 3 - contentTop());
-		g.blitSprite(INSET, previewX(), contentTop(), previewW(), bottomY() - 3 - contentTop());
+	public void renderBackground(GuiGraphics g) {
+		super.renderBackground(g);
+		com.chaos.tablist.client.LegacyGui.blitSprite(g, PANEL, 0, 0, width, height);
+		com.chaos.tablist.client.LegacyGui.blitSprite(g, INSET, M, contentTop(), leftW(), bottomY() - 3 - contentTop());
+		com.chaos.tablist.client.LegacyGui.blitSprite(g, INSET, previewX(), contentTop(), previewW(), bottomY() - 3 - contentTop());
 		for (int[] f : fields) {
-			g.blitSprite(INSET, f[0], f[1], f[2], f[3]);
+			com.chaos.tablist.client.LegacyGui.blitSprite(g, INSET, f[0], f[1], f[2], f[3]);
 		}
 	}
 
 	@Override
 	public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        renderBackground(g);
 		super.render(g, mouseX, mouseY, partialTick);
 		renderTitle(g);
 		for (Label l : labels) {
@@ -2201,7 +2208,7 @@ public class TablistEditorScreen extends Screen {
 
 	private void renderList(GuiGraphics g, int mouseX, int mouseY) {
 		ListArea l = list;
-		g.blitSprite(INSET, l.x(), l.y(), l.w(), l.h());
+		com.chaos.tablist.client.LegacyGui.blitSprite(g, INSET, l.x(), l.y(), l.w(), l.h());
 		g.enableScissor(l.x() + 2, l.y() + 2, l.x() + l.w() - 2, l.y() + l.h() - 2);
 		for (int i = 0; i < l.items().size(); i++) {
 			int ry = l.y() + 2 + i * 12 - listScroll;
@@ -2221,7 +2228,7 @@ public class TablistEditorScreen extends Screen {
 	private void renderLines(GuiGraphics g, int mouseX, int mouseY) {
 		int[] a = lineArea;
 		List<String> lines = lineTarget;
-		g.blitSprite(INSET, a[0], a[1], a[2], a[3]);
+		com.chaos.tablist.client.LegacyGui.blitSprite(g, INSET, a[0], a[1], a[2], a[3]);
 		int visible = Math.max(1, (a[3] - 4) / 12);
 		if (selectedLine < lineScroll) {
 			lineScroll = selectedLine;
@@ -2313,7 +2320,7 @@ public class TablistEditorScreen extends Screen {
 		g.enableScissor(px + 2, py + 15, px + pw - 2, bottom);
 		try {
 			var board = minecraft != null && minecraft.level != null ? minecraft.level.getScoreboard() : null;
-			var objective = board == null ? null : board.getDisplayObjective(DisplaySlot.LIST);
+			var objective = board == null ? null : board.getDisplayObjective(0);
 			TabRenderer.render(g, font, draft, previewEntries(), ClientState.global(), px + pw / 2, py + 17, pw - 8,
 					bottom - py - 19, objective, board, ClientContext.now(), previewOpenedAt, progress, vanillaPreview);
 		} catch (RuntimeException e) {
@@ -2365,7 +2372,7 @@ public class TablistEditorScreen extends Screen {
 				String id = ids.get(i);
 				int cx = area[0] + c * cell;
 				int cy = area[1] + r * cell;
-				g.blitSprite(CELL, cx, cy, cell - 2, cell - 2);
+				com.chaos.tablist.client.LegacyGui.blitSprite(g, CELL, cx, cy, cell - 2, cell - 2);
 				boolean over = mouseX >= cx && mouseX < cx + cell - 2 && mouseY >= cy && mouseY < cy + cell - 2;
 				if (over) {
 					g.fill(cx + 1, cy + 1, cx + cell - 3, cy + cell - 3, 0x40FFE08A);
@@ -2432,7 +2439,7 @@ public class TablistEditorScreen extends Screen {
 		int[] r = popupRect();
 		g.pose().pushPose();
 		g.pose().translate(0, 0, 400);
-		g.blitSprite(PANEL, r[0], r[1], r[2], r[3]);
+		com.chaos.tablist.client.LegacyGui.blitSprite(g, PANEL, r[0], r[1], r[2], r[3]);
 		Component title = popup == Popup.EFFECT_EDIT && editing != null
 				? Lang.tr("popup.effect_edit", Lang.tr("snippet." + editing.id()))
 				: iconPick != null ? Lang.tr("popup.icon_pick") : Lang.tr("popup." + popup.name().toLowerCase());
@@ -2468,7 +2475,7 @@ public class TablistEditorScreen extends Screen {
 		if (popup == Popup.COLOR && hexBox != null && hexOk != null && hexPreview != null) {
 			g.pose().pushPose();
 			g.pose().translate(0, 0, 450);
-			g.blitSprite(INSET, hexBox.getX() - 4, hexBox.getY() - 4, hexBox.getWidth() + 8, FH);
+			com.chaos.tablist.client.LegacyGui.blitSprite(g, INSET, hexBox.getX() - 4, hexBox.getY() - 4, hexBox.getWidth() + 8, FH);
 			hexBox.render(g, mouseX, mouseY, 0);
 			hexPreview.render(g, mouseX, mouseY, 0);
 			hexOk.render(g, mouseX, mouseY, 0);
@@ -2673,7 +2680,7 @@ public class TablistEditorScreen extends Screen {
 		inlineLine = line;
 		rebuildWidgets();
 		if (inlineBox != null) {
-			inlineBox.moveCursorToEnd(false);
+			inlineBox.moveCursorToEnd();
 		}
 	}
 

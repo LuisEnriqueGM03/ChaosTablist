@@ -14,7 +14,7 @@ import net.minecraft.client.Screenshot;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameRules;
-import net.minecraft.world.scores.DisplaySlot;
+
 
 /**
  * Graba las capturas y los frames de los GIF de demostración (solo en desarrollo: ./gradlew runShowcase, necesita
@@ -164,7 +164,7 @@ public final class Showcase {
 			p.serverLevel().setDayTime(6000);
 			p.serverLevel().setWeatherParameters(6000, 0, false, false);
 			// Sin el marcador que deja la autoprueba vanilla.
-			server.getScoreboard().setDisplayObjective(DisplaySlot.LIST, null);
+			server.getScoreboard().setDisplayObjective(0, null);
 			TabServer.apply(server, new TabConfig());
 		});
 	}

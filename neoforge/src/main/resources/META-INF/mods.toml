@@ -1,0 +1,21 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+[[mods]]
+modId="chaostablist"
+version="${version}"
+displayName="Chaos Tablist"
+authors="Luis Enrique Gil Mayser"
+description='''Animated tab list, private placeholders, reusable designs and an in-game editor.'''
+[[dependencies.chaostablist]]
+modId="forge"
+mandatory=true
+versionRange="[47.1.106,48)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.chaostablist]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"

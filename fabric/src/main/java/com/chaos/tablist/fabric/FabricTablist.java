@@ -13,14 +13,7 @@ import net.fabricmc.fabric.api.networking.v1.*;
 
 public final class FabricTablist implements ModInitializer {
     @Override public void onInitialize() {
-        PayloadTypeRegistry.playS2C().register(TabPayloads.SyncConfig.TYPE, TabPayloads.SyncConfig.CODEC);
-        PayloadTypeRegistry.playS2C().register(TabPayloads.SyncValues.TYPE, TabPayloads.SyncValues.CODEC);
-        PayloadTypeRegistry.playS2C().register(TabPayloads.SelfValues.TYPE, TabPayloads.SelfValues.CODEC);
-        PayloadTypeRegistry.playS2C().register(TabPayloads.IconData.TYPE, TabPayloads.IconData.CODEC);
-        PayloadTypeRegistry.playS2C().register(TabPayloads.OpenEditor.TYPE, TabPayloads.OpenEditor.CODEC);
-        PayloadTypeRegistry.playS2C().register(TabPayloads.SaveResult.TYPE, TabPayloads.SaveResult.CODEC);
-        PayloadTypeRegistry.playC2S().register(TabPayloads.SaveConfig.TYPE, TabPayloads.SaveConfig.CODEC);
-        ServerPlayNetworking.registerGlobalReceiver(TabPayloads.SaveConfig.TYPE, (p, c) -> c.server().execute(() -> TabServer.save(c.player(), p)));
+        ServerPlayNetworking.registerGlobalReceiver(TabPayloads.SaveConfig.TYPE, (server,player,handler,buf,sender) -> { var packet = TabPayloads.SaveConfig.CODEC.decode(buf); server.execute(() -> TabServer.save(player,packet)); });
         CommandRegistrationCallback.EVENT.register((dispatcher, registries, environment) -> TabCommand.register(dispatcher));
         ServerLifecycleEvents.SERVER_STARTED.register(ChaosTablist::started);
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> ChaosTablist.stopped());
