@@ -19,7 +19,7 @@ El proyecto usa la misma separación que Chaos Ranks: `common/` contiene el edit
 | Forge | Java 21 y Forge 54.1.14+ de la serie 54 | `forge/build/libs/chaostablist-forge-1.21.4-1.2.0.jar` |
 | NeoForge | Java 21 y NeoForge 21.4.158+ de la serie 21.4 | `neoforge/build/libs/chaostablist-neoforge-1.21.4-1.2.0.jar` |
 
-Fabric pasa las pruebas dentro del juego. Forge y NeoForge se publican como **beta**: compilan y pasan 82 comprobaciones, pero la prueba gráfica queda bloqueada en la biblioteca AMD atio6axx.dll del equipo de prueba. Consulta VALIDATION.md.
+Los tres cargadores pasan las pruebas dentro del juego y la simulación vanilla. En el equipo de desarrollo Windows se usa `javaw.exe` con la preferencia existente de alto rendimiento; el arranque reproducible está en `tools/windows-gpu.init.gradle`. Consulta VALIDATION.md y GRAPHICS_RETEST_1.21.4.md.
 
 Los tres JAR listos para instalar están también en `dist/`. Consulta [VALIDATION.md](VALIDATION.md) para ver los resultados y las limitaciones de las pruebas.
 

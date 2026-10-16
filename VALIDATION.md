@@ -9,18 +9,18 @@
 | JAR de producción y fuentes | PASS | PASS | PASS |
 | Regresiones e aislamiento de cargadores | 82/82 | 82/82 | 82/82 |
 | Metadatos, bytecode Java 21, 162 iconos y ocho idiomas | PASS | PASS | PASS |
-| Tab, editor, datos privados y guardado por red | PASS | Pendiente | Pendiente |
-| Diseños, aviso de cambios, diagnósticos y conflictos | PASS | Pendiente | Pendiente |
-| Simulación vanilla y guardado confirmado | PASS | No ejecutada | No ejecutada |
+| Tab, editor, datos privados y guardado por red | PASS | PASS | PASS |
+| Diseños, aviso de cambios, diagnósticos y conflictos | PASS | PASS | PASS |
+| Simulación vanilla y guardado confirmado | PASS | PASS | PASS |
 | Arranque dedicado --initSettings | No ejecutado | PASS hasta EULA | PASS hasta EULA |
 
 La adaptación usa las APIs de dibujo de 1.21.4 para texturas y cabezas, alfa explícito y la consulta actualizada al registro de ítems. Un identificador de ítem inexistente muestra la barrera de respaldo. Los recursos usan pack_format 46. Se revisaron capturas reales de Fabric.
 
-## Límite gráfico de Forge y NeoForge
+## Nueva comprobación gráfica
 
-Ambos clientes fallaron con EXCEPTION_ACCESS_VIOLATION dentro de atio6axx.dll+0x190590. Se repitió el arranque omitiendo la ventana inicial del cargador y el mismo fallo volvió al crear la ventana OpenGL de Minecraft. No se certifican el editor, el renderizado ni el guardado dentro del juego en esos dos cargadores para 1.21.4. Se publican como beta. El resultado no demuestra que el problema sea exclusivamente del controlador ni que una prueba aprobada en Fabric valide las otras interfaces.
+Forge y NeoForge completaron las autopruebas normales y la simulación vanilla el 16 de octubre de 2026. Se verificaron capturas de ambos editores, guardado por red, diseños, avisos, diagnósticos y conflictos. Los cuatro procesos terminaron con [selftest] PASS y BUILD SUCCESSFUL.
 
-La opción de omitir la ventana inicial se cambió únicamente en las carpetas locales de desarrollo; no está incluida en los JAR. No se cambiaron controladores ni ajustes gráficos del sistema.
+El fallo inicial se reprodujo al usar java.exe. La preferencia existente de alto rendimiento de Windows estaba asignada a javaw.exe; al usar ese ejecutable del mismo JDK 21, las pruebas pasaron. tools/windows-gpu.init.gradle reproduce ese arranque sin modificar los ajustes del sistema. Se mantuvo earlyWindowControl=false en las carpetas locales de pruebas; no se certificó de nuevo la ventana inicial activada. Consulta GRAPHICS_RETEST_1.21.4.md.
 
 ## Reproducción y alcance
 
