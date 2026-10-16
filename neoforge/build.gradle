@@ -9,7 +9,6 @@ neoForge {
         selftest {
             client(); gameDirectory = file('run')
             systemProperty 'chaostablist.selftest', 'true'
-            programArguments.addAll('--quickPlaySingleplayer', 'selftest')
         }
         showcase {
             client(); gameDirectory = file('run')
@@ -20,7 +19,6 @@ neoForge {
             client(); gameDirectory = file('run')
             systemProperty 'chaostablist.selftest', 'true'
             systemProperty 'chaostablist.forceVanilla', 'true'
-            programArguments.addAll('--quickPlaySingleplayer', 'selftest')
         }
     }
     mods { chaostablist { sourceSet sourceSets.main } }

@@ -416,7 +416,7 @@ public final class TabRenderer {
 					hat = player == null || player.isModelPartShown(PlayerModelPart.HAT);
 					upsideDown = player != null && net.minecraft.client.renderer.entity.LivingEntityRenderer.isEntityUpsideDown(player);
 				}
-				PlayerFaceRenderer.draw(g, row.entry().skin().texture(), cx, ty, 8, hat, upsideDown);
+				PlayerFaceRenderer.draw(g, row.entry().skin().texture(), cx, ty, 8, hat, upsideDown, RichText.scaleAlpha(0xFFFFFFFF, alpha * (row.entry().mode() == GameType.SPECTATOR ? l.spectatorAlpha : 1)));
 				RenderSystem.setShaderColor(1, 1, 1, 1);
 				cx += 10;
 			}
@@ -428,7 +428,7 @@ public final class TabRenderer {
 					g.pose().pushPose();
 					g.pose().translate(0, 0, 100);
 					RenderSystem.setShaderColor(1, 1, 1, alpha);
-					g.blitSprite(pingSprite(row.entry().latency()), right - 10, ty, 10, 8);
+					g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, pingSprite(row.entry().latency()), right - 10, ty, 10, 8);
 					RenderSystem.setShaderColor(1, 1, 1, 1);
 					g.pose().popPose();
 				}

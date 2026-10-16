@@ -1,6 +1,6 @@
-cd2c0a9dca656e5d9e50ec7c20bbeed671c1ea381ab549216271594cede5c132  chaostablist-fabric-1.21.1-1.2.0.jar
-9b234abaf4686d0f6b962cdd32b7b3f9f82ca2d5359e2a9af85efe0001c35386  chaostablist-fabric-1.21.1-1.2.0-sources.jar
-7e49055b9c79241759b995552933561fdf6ee87a1cf6def99234c73a5f824129  chaostablist-forge-1.21.1-1.2.0.jar
-a3c3e499f64b987b663b06e505485a29d910377a8ebd471c9ba5e5d0ca6ee836  chaostablist-forge-1.21.1-1.2.0-sources.jar
-58dc7cd4ebc0b19cd22acd5c7e1619e04decfeff1478c6ad5f2094bab3d6876f  chaostablist-neoforge-1.21.1-1.2.0.jar
-c7e1c0dfb42f1e7c0cbe34ffbb773b56c2bef3905b40ccc588f72081529717d8  chaostablist-neoforge-1.21.1-1.2.0-sources.jar
+0c8a83feeb05ac784891f3b669dc2fa693c2cec806c5f3ef10cd71d11491fac9  chaostablist-fabric-1.21.4-1.2.0.jar
+07266e3b7b072cfd04d9d2b34a70e94d92b0fd6005187bff960109debed50ff4  chaostablist-fabric-1.21.4-1.2.0-sources.jar
+22b937a04dfd1905fb3f036742fd4f2027ea0f1305fc5930867eed666ef145c7  chaostablist-forge-1.21.4-1.2.0.jar
+1bd159391365999b3c2776b11ace6bcbc0f9d86b3951a4d345154d272d282877  chaostablist-forge-1.21.4-1.2.0-sources.jar
+263f54d4ea321e4f184b2385f557ce205e9127b9b0dba53e02326130856a363f  chaostablist-neoforge-1.21.4-1.2.0.jar
+4575cd5f284ac3e9f3acf3df4664158feefd30d99d04c78e57cc489f63772fd2  chaostablist-neoforge-1.21.4-1.2.0-sources.jar

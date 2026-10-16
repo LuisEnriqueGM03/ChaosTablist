@@ -1903,7 +1903,7 @@ public class TablistEditorScreen extends Screen {
 
 	private void renderEffectEditor(GuiGraphics g, int[] r, int mouseX, int mouseY) {
 		for (int[] f : popupFields) {
-			g.blitSprite(INSET, f[0], f[1], f[2], f[3]);
+			g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, f[0], f[1], f[2], f[3]);
 		}
 		for (Label l : popupLabels) {
 			drawLabel(g, l);
@@ -2109,11 +2109,11 @@ public class TablistEditorScreen extends Screen {
 	@Override
 	public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
 		renderTransparentBackground(g);
-		g.blitSprite(PANEL, 0, 0, width, height);
-		g.blitSprite(INSET, M, contentTop(), leftW(), bottomY() - 3 - contentTop());
-		g.blitSprite(INSET, previewX(), contentTop(), previewW(), bottomY() - 3 - contentTop());
+		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, PANEL, 0, 0, width, height);
+		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, M, contentTop(), leftW(), bottomY() - 3 - contentTop());
+		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, previewX(), contentTop(), previewW(), bottomY() - 3 - contentTop());
 		for (int[] f : fields) {
-			g.blitSprite(INSET, f[0], f[1], f[2], f[3]);
+			g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, f[0], f[1], f[2], f[3]);
 		}
 	}
 
@@ -2201,7 +2201,7 @@ public class TablistEditorScreen extends Screen {
 
 	private void renderList(GuiGraphics g, int mouseX, int mouseY) {
 		ListArea l = list;
-		g.blitSprite(INSET, l.x(), l.y(), l.w(), l.h());
+		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, l.x(), l.y(), l.w(), l.h());
 		g.enableScissor(l.x() + 2, l.y() + 2, l.x() + l.w() - 2, l.y() + l.h() - 2);
 		for (int i = 0; i < l.items().size(); i++) {
 			int ry = l.y() + 2 + i * 12 - listScroll;
@@ -2221,7 +2221,7 @@ public class TablistEditorScreen extends Screen {
 	private void renderLines(GuiGraphics g, int mouseX, int mouseY) {
 		int[] a = lineArea;
 		List<String> lines = lineTarget;
-		g.blitSprite(INSET, a[0], a[1], a[2], a[3]);
+		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, a[0], a[1], a[2], a[3]);
 		int visible = Math.max(1, (a[3] - 4) / 12);
 		if (selectedLine < lineScroll) {
 			lineScroll = selectedLine;
@@ -2365,7 +2365,7 @@ public class TablistEditorScreen extends Screen {
 				String id = ids.get(i);
 				int cx = area[0] + c * cell;
 				int cy = area[1] + r * cell;
-				g.blitSprite(CELL, cx, cy, cell - 2, cell - 2);
+				g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, CELL, cx, cy, cell - 2, cell - 2);
 				boolean over = mouseX >= cx && mouseX < cx + cell - 2 && mouseY >= cy && mouseY < cy + cell - 2;
 				if (over) {
 					g.fill(cx + 1, cy + 1, cx + cell - 3, cy + cell - 3, 0x40FFE08A);
@@ -2375,7 +2375,7 @@ public class TablistEditorScreen extends Screen {
 				if (id.startsWith("custom/")) {
 					CustomIcons.Icon ci = CustomIcons.get(id.substring(7));
 					if (ci != null) {
-						g.blit(ci.texture(), cx + 1, cy + 1, 14, 14, 0, 0, ci.width(), ci.height(), ci.width(), ci.height());
+						g.blit(net.minecraft.client.renderer.RenderType::guiTextured, ci.texture(), cx + 1, cy + 1, 14, 14, 0, 0, ci.width(), ci.height(), ci.width(), ci.height());
 					}
 				} else {
 					Icons.Icon icon = Icons.icon(id);
@@ -2432,7 +2432,7 @@ public class TablistEditorScreen extends Screen {
 		int[] r = popupRect();
 		g.pose().pushPose();
 		g.pose().translate(0, 0, 400);
-		g.blitSprite(PANEL, r[0], r[1], r[2], r[3]);
+		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, PANEL, r[0], r[1], r[2], r[3]);
 		Component title = popup == Popup.EFFECT_EDIT && editing != null
 				? Lang.tr("popup.effect_edit", Lang.tr("snippet." + editing.id()))
 				: iconPick != null ? Lang.tr("popup.icon_pick") : Lang.tr("popup." + popup.name().toLowerCase());
@@ -2468,7 +2468,7 @@ public class TablistEditorScreen extends Screen {
 		if (popup == Popup.COLOR && hexBox != null && hexOk != null && hexPreview != null) {
 			g.pose().pushPose();
 			g.pose().translate(0, 0, 450);
-			g.blitSprite(INSET, hexBox.getX() - 4, hexBox.getY() - 4, hexBox.getWidth() + 8, FH);
+			g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, hexBox.getX() - 4, hexBox.getY() - 4, hexBox.getWidth() + 8, FH);
 			hexBox.render(g, mouseX, mouseY, 0);
 			hexPreview.render(g, mouseX, mouseY, 0);
 			hexOk.render(g, mouseX, mouseY, 0);

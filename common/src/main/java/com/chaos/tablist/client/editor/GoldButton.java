@@ -38,7 +38,7 @@ public class GoldButton extends Button {
 	@Override
 	protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
 		ResourceLocation sprite = selected ? SELECTED : !active ? DISABLED : isHoveredOrFocused() ? HOVER : NORMAL;
-		g.blitSprite(sprite, getX(), getY(), getWidth(), getHeight());
+		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, sprite, getX(), getY(), getWidth(), getHeight());
 		int color = selected ? TEXT_SELECTED : !active ? TEXT_DISABLED : isHoveredOrFocused() ? TEXT_HOVER : TEXT;
 		Font font = Minecraft.getInstance().font;
 		Component message = getMessage();

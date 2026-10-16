@@ -10,11 +10,9 @@ loom {
     runs {
         selftest {
             client(); runDir 'run'; vmArg '-Dchaostablist.selftest=true'
-            programArgs '--quickPlaySingleplayer', 'selftest'
         }
         selftestVanilla {
             client(); runDir 'run'; vmArg '-Dchaostablist.selftest=true'; vmArg '-Dchaostablist.forceVanilla=true'
-            programArgs '--quickPlaySingleplayer', 'selftest'
         }
         showcase {
             client(); runDir 'run'; vmArg '-Dchaostablist.showcase=true'

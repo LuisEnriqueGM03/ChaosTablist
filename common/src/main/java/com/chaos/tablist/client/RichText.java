@@ -227,23 +227,23 @@ public final class RichText {
 				Minecraft mc = Minecraft.getInstance();
 				PlayerInfo info = mc.getConnection() == null ? null : mc.getConnection().getPlayerInfo(gl.text);
 				if (info != null) {
-					PlayerFaceRenderer.draw(g, info.getSkin(), 0, 0, 8);
+					PlayerFaceRenderer.draw(g, info.getSkin(), 0, 0, 8, scaleAlpha(0xFFFFFFFF,a));
 				} else {
-					PlayerFaceRenderer.draw(g, net.minecraft.client.resources.DefaultPlayerSkin.get(java.util.UUID.nameUUIDFromBytes(gl.text.getBytes())), 0, 0, 8);
+					PlayerFaceRenderer.draw(g, net.minecraft.client.resources.DefaultPlayerSkin.get(java.util.UUID.nameUUIDFromBytes(gl.text.getBytes())), 0, 0, 8, scaleAlpha(0xFFFFFFFF,a));
 				}
 			}
 			case ITEM -> {
 				ResourceLocation id = ResourceLocation.tryParse(gl.text);
-				Item item = id == null ? Items.BARRIER : BuiltInRegistries.ITEM.get(id);
+				Item item = id == null ? Items.BARRIER : BuiltInRegistries.ITEM.getValue(id);
 				g.pose().scale(0.5f, 0.5f, 1);
-				g.renderItem(new ItemStack(item == Items.AIR ? Items.BARRIER : item), 0, 0);
+				g.renderItem(new ItemStack(item == null || item == Items.AIR ? Items.BARRIER : item), 0, 0);
 			}
 			case IMAGE -> {
 				CustomIcons.Icon icon = CustomIcons.get(gl.text);
 				int w = imageWidth(gl);
 				int h = imageHeight(gl);
 				if (icon != null) {
-					g.blit(icon.texture(), 0, 8 - h, w, h, 0, 0, icon.width(), icon.height(), icon.width(), icon.height());
+					g.blit(net.minecraft.client.renderer.RenderType::guiTextured, icon.texture(), 0, 8 - h, w, h, 0, 0, icon.width(), icon.height(), icon.width(), icon.height());
 				} else {
 					g.fill(0, 8 - h, w, 8, 0x80FF00FF);
 				}

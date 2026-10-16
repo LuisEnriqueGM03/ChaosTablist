@@ -16,10 +16,9 @@ minecraft {
         client { }
         server { args '--nogui' }
         serverSmoke { parent runs.server; workingDirectory file('run-server-smoke'); args '--initSettings' }
-        selftest { parent runs.client; property 'chaostablist.selftest', 'true'; if (!project.hasProperty('manualWorld')) args '--quickPlaySingleplayer', 'selftest' }
+        selftest { parent runs.client; property 'chaostablist.selftest', 'true' }
         selftestVanilla {
             parent runs.client; property 'chaostablist.selftest', 'true'; property 'chaostablist.forceVanilla', 'true'
-            if (!project.hasProperty('manualWorld')) args '--quickPlaySingleplayer', 'selftest'
         }
         showcase {
             parent runs.client; property 'chaostablist.showcase', 'true'

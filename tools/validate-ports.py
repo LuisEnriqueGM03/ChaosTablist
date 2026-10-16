@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 VERSION = next(line.split("=", 1)[1] for line in (ROOT / "gradle.properties").read_text().splitlines() if line.startswith("version="))
 
 for loader in ("fabric", "forge", "neoforge"):
-    jar = ROOT / loader / "build/libs" / f"chaostablist-{loader}-1.21.1-{VERSION}.jar"
+    jar = ROOT / loader / "build/libs" / f"chaostablist-{loader}-1.21.4-{VERSION}.jar"
     with zipfile.ZipFile(jar) as z:
         names = set(z.namelist())
         provider = z.read("META-INF/services/com.chaos.tablist.platform.Platform").decode().strip()
@@ -19,6 +19,7 @@ for loader in ("fabric", "forge", "neoforge"):
         for name in names:
             if name.endswith(".class") and name.startswith("com/chaos/tablist/"):
                 content = z.read(name)
+                assert int.from_bytes(content[6:8], "big") == 65, name
                 for other, api in {"fabric": b"net/fabricmc/", "forge": b"net/minecraftforge/", "neoforge": b"net/neoforged/"}.items():
                     if other != loader:
                         assert api not in content, f"{other} dependency in {loader} jar: {name}"
@@ -40,8 +41,8 @@ for loader in ("fabric", "forge", "neoforge"):
             meta = tomllib.loads(z.read(metadata_path).decode())
             assert meta["mods"][0]["modId"] == "chaostablist" and meta["mods"][0]["version"] == VERSION
             deps = {d["modId"]: d for d in meta["dependencies"]["chaostablist"]}
-            assert deps[loader]["versionRange"] == ("[21.1.257,21.2)" if loader == "neoforge" else "[52.1.16,53)")
-            assert deps["minecraft"]["versionRange"] == "[1.21.1,1.21.2)"
+            assert deps[loader]["versionRange"] == ("[21.4.158,21.5)" if loader == "neoforge" else "[54.1.14,55)")
+            assert deps["minecraft"]["versionRange"] == "[1.21.4,1.21.5)"
             assert "fabric.mod.json" not in names
             if loader == "forge":
                 assert "MixinConfigs: chaostablist.mixins.json" in z.read("META-INF/MANIFEST.MF").decode()

@@ -1,4 +1,11 @@
-## NeoForge and graphical retest (2026-10-16)
+## Minecraft 1.21.4 — Chaos Tablist 1.2.0
+
+- Adapted GUI textures, player heads, alpha rendering and item registry lookup to Minecraft 1.21.4.
+- All three loaders compile, pass 82 regression checks and production JAR validation.
+- Fabric passes in-game editor, network save, conflict recovery and vanilla packet simulation.
+- Forge and NeoForge are **beta**: in-game checks remain pending because the test PC crashes in AMD atio6axx.dll during OpenGL window creation, even without the loader's early window. Dedicated initialization reaches the EULA check. See VALIDATION.md.
+
+## Earlier Minecraft 1.21.1 validation (2026-10-16)
 
 - Added a native NeoForge 21.1 port for Minecraft 1.21.1, including optional typed payloads, lifecycle events and client integration.
 - Forge and NeoForge completed the in-game editor, private data, network save, presets, diagnostics and conflict recovery tests after the graphics driver repair.

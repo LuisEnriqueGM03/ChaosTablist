@@ -19,7 +19,7 @@ final class CloseDraftScreen extends Screen {
     }
     @Override public void renderBackground(GuiGraphics g, int mx, int my, float delta) {
         renderTransparentBackground(g);
-        g.blitSprite(com.chaos.tablist.ChaosTablist.id("panel"), width / 2 - 120, height / 2 - 50, 240, 135);
+        g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, com.chaos.tablist.ChaosTablist.id("panel"), width / 2 - 120, height / 2 - 50, 240, 135);
     }
     @Override public void onClose() { minecraft.setScreen(editor); }
     @Override public void render(GuiGraphics g, int mx, int my, float delta) {

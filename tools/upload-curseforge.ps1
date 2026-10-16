@@ -23,7 +23,7 @@ if ($Loader -eq "fabric") {
 }
 
 $version = ((Get-Content "$root\gradle.properties") | Where-Object { $_ -match '^version=' }) -replace '^version=', ''
-$jar = Get-ChildItem "$root\$Loader\build\libs" -Filter "chaostablist-$Loader-1.21.1-$version.jar" | Select-Object -First 1
+$jar = Get-ChildItem "$root\$Loader\build\libs" -Filter "chaostablist-$Loader-1.21.4-$version.jar" | Select-Object -First 1
 if (-not $jar) { throw "No existe el JAR de $Loader para $version; compila primero ese cargador" }
 
 if ($DryRun) {
@@ -36,7 +36,7 @@ if ($DryRun) {
 $api = "https://minecraft.curseforge.com/api"
 $all = Invoke-RestMethod -Uri "$api/game/versions" -Headers @{ "X-Api-Token" = $token }
 $loaderLabel = if ($Loader -eq "fabric") { "Fabric" } elseif ($Loader -eq "neoforge") { "NeoForge" } else { "Forge" }
-$wanted = "1.21.1", $loaderLabel, "Java 21", "Client", "Server"
+$wanted = "1.21.4", $loaderLabel, "Java 21", "Client", "Server"
 $ids = foreach ($name in $wanted) {
 	$match = $all | Where-Object { $_.name -eq $name } | Select-Object -First 1
 	if (-not $match) { throw "CurseForge no tiene la versión '$name'" }

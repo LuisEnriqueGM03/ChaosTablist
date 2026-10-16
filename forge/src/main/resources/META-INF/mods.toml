@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[52,)"
+loaderVersion="[54,)"
 license="MIT"
 [[mods]]
 modId="chaostablist"
@@ -11,12 +11,12 @@ description='''Animated tab list, rich text, private placeholders, reusable desi
 [[dependencies.chaostablist]]
 modId="forge"
 mandatory=true
-versionRange="[52.1.16,53)"
+versionRange="[54.1.14,55)"
 ordering="NONE"
 side="BOTH"
 [[dependencies.chaostablist]]
 modId="minecraft"
 mandatory=true
-versionRange="[1.21.1,1.21.2)"
+versionRange="[1.21.4,1.21.5)"
 ordering="NONE"
 side="BOTH"

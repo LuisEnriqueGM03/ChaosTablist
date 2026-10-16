@@ -1,0 +1,26 @@
+[
+  {
+    "file": "chaostablist-fabric-1.21.4-1.2.0.jar",
+    "sha256": "0c8a83feeb05ac784891f3b669dc2fa693c2cec806c5f3ef10cd71d11491fac9"
+  },
+  {
+    "file": "chaostablist-fabric-1.21.4-1.2.0-sources.jar",
+    "sha256": "07266e3b7b072cfd04d9d2b34a70e94d92b0fd6005187bff960109debed50ff4"
+  },
+  {
+    "file": "chaostablist-forge-1.21.4-1.2.0.jar",
+    "sha256": "22b937a04dfd1905fb3f036742fd4f2027ea0f1305fc5930867eed666ef145c7"
+  },
+  {
+    "file": "chaostablist-forge-1.21.4-1.2.0-sources.jar",
+    "sha256": "1bd159391365999b3c2776b11ace6bcbc0f9d86b3951a4d345154d272d282877"
+  },
+  {
+    "file": "chaostablist-neoforge-1.21.4-1.2.0.jar",
+    "sha256": "263f54d4ea321e4f184b2385f557ce205e9127b9b0dba53e02326130856a363f"
+  },
+  {
+    "file": "chaostablist-neoforge-1.21.4-1.2.0-sources.jar",
+    "sha256": "4575cd5f284ac3e9f3acf3df4664158feefd30d99d04c78e57cc489f63772fd2"
+  }
+]
