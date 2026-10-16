@@ -3,7 +3,7 @@
 - Adapted GUI textures, player heads, alpha rendering and item registry lookup to Minecraft 1.21.4.
 - All three loaders compile, pass 82 regression checks and production JAR validation.
 - Fabric passes in-game editor, network save, conflict recovery and vanilla packet simulation.
-- Forge and NeoForge are **beta**: in-game checks remain pending because the test PC crashes in AMD atio6axx.dll during OpenGL window creation, even without the loader's early window. Dedicated initialization reaches the EULA check. See VALIDATION.md.
+- Forge and NeoForge now pass the in-game editor, network save, conflict recovery and vanilla simulation using javaw.exe with the existing Windows high-performance GPU preference. The local test environment keeps the early loader window disabled. See GRAPHICS_RETEST_1.21.4.md. Production JAR hashes are unchanged.
 
 ## Earlier Minecraft 1.21.1 validation (2026-10-16)
 
