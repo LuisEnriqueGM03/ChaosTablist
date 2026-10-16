@@ -1,0 +1,16 @@
+// Run development clients with javaw.exe so Windows applies its existing per-app GPU preference.
+// Usage: gradlew-forge.bat -I tools/windows-gpu.init.gradle :forge:runSelftest
+// NeoForge: gradlew.bat -Ploader=neoforge -I tools/windows-gpu.init.gradle :neoforge:runSelftest
+import org.gradle.jvm.toolchain.JavaLauncher
+gradle.projectsEvaluated {
+    rootProject.allprojects {
+        tasks.withType(JavaExec).configureEach {
+            def consoleLauncher = project.javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }.get()
+            def guiFile = rootProject.layout.file(rootProject.providers.provider { new File(consoleLauncher.executablePath.asFile.parentFile, 'javaw.exe') }).get()
+            javaLauncher.set([
+                getMetadata: { consoleLauncher.metadata },
+                getExecutablePath: { guiFile }
+            ] as JavaLauncher)
+        }
+    }
+}
