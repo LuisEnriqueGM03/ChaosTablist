@@ -3,7 +3,7 @@ Genera las texturas del editor del Tab (estilo pixel, marrón oscuro con contorn
 
     python tools/gen_gui.py
 
-Escribe sprites nine-slice en src/main/resources/assets/chaostablist/textures/gui/sprites/, que el juego
+Escribe sprites nine-slice en common/src/main/resources/assets/chaostablist/textures/gui/sprites/, que el juego
 mete solo en el atlas de la interfaz (se usan como "chaostablist:<nombre>").
 """
 import json
@@ -11,7 +11,7 @@ from pathlib import Path
 
 from PIL import Image
 
-OUT = Path(__file__).resolve().parent.parent / "src/main/resources/assets/chaostablist/textures/gui/sprites"
+OUT = Path(__file__).resolve().parent.parent / "common/src/main/resources/assets/chaostablist/textures/gui/sprites"
 
 
 def rgb(h, a=255):

@@ -1,12 +1,60 @@
 # Chaos Tablist
 
-Mod de Fabric (Minecraft 1.21.1) para personalizar el Tab al máximo: header y footer con varias líneas, rango de cada jugador con Chaos Ranks, ping, degradados, fade, arcoíris, animaciones por letra, fondos detrás del texto, iconos y badges en pixel art (como los de Chaos Ranks), datos del servidor (TPS, RAM, CPU…) y del cliente (FPS, RAM, hora). Todo se edita **en caliente** con `/tablist` desde un menú propio con vista previa en vivo, y queda guardado en el servidor.
+Mod para Fabric, Forge y NeoForge (Minecraft 1.21.1) para personalizar el Tab al máximo: header y footer con varias líneas, rango de cada jugador con Chaos Ranks, ping, degradados, fade, arcoíris, animaciones por letra, fondos detrás del texto, iconos y badges en pixel art (como los de Chaos Ranks), datos del servidor (TPS, RAM, CPU…) y del cliente (FPS, RAM, hora). Todo se edita **en caliente** con `/tablist` desde un menú propio con vista previa en vivo, y queda guardado en el servidor.
 
 Es **híbrido**:
 - **Solo en el servidor** ya funciona con clientes vanilla: el servidor monta el Tab y lo manda por los paquetes normales (header, footer y nombre de cada jugador), con las animaciones al ritmo de `updateTicks`.
 - **Con el mod también en el cliente** el Tab lo pinta el propio cliente a cada frame: animaciones suaves a los FPS del juego, fondos detrás del texto, transparencia, ola, temblor, contorno, brillo, cabezas, ítems, imágenes PNG propias, panel con borde degradado animado, animación al abrir… y placeholders del cliente como `{fps}` o `{client_ram}`. El editor `/tablist` necesita el mod en el cliente.
 
 Lo que solo se ve con el mod (marcado con ★ en el editor) en vanilla simplemente no se aplica, sin romper el texto. Los iconos y badges salen como un símbolo de respaldo (`♛`, `★`, `[VIP]`…).
+
+
+## Fabric, Forge y NeoForge (1.21.1 · 1.2.0)
+
+El proyecto usa la misma separación que Chaos Ranks: `common/` contiene el editor, renderizado, configuración, texto, comandos y pruebas; `fabric/`, `forge/` y `neoforge/` contienen únicamente los eventos y la red nativa de cada cargador. No se necesita Architectury ni otra capa adicional al instalarlo.
+
+| Variante | Requisitos | JAR |
+|---|---|---|
+| Fabric | Java 21, Fabric Loader 0.16+ y Fabric API para 1.21.1 | `fabric/build/libs/chaostablist-fabric-1.21.1-1.2.0.jar` |
+| Forge | Java 21 y Forge 52.1.16+ de la serie 52 | `forge/build/libs/chaostablist-forge-1.21.1-1.2.0.jar` |
+| NeoForge | Java 21 y NeoForge 21.1.257+ de la serie 21.1 | `neoforge/build/libs/chaostablist-neoforge-1.21.1-1.2.0.jar` |
+
+Forge se publica como **beta**: la prueba normal en juego pasó, pero falló la simulación vanilla durante la inicialización del servidor. Fabric y NeoForge completaron ambas pruebas.
+
+Los tres JAR listos para instalar están también en `dist/`. Consulta [VALIDATION.md](VALIDATION.md) para ver los resultados y las limitaciones de las pruebas.
+
+Usa el JAR de tu cargador. En Forge y NeoForge no se necesita Fabric API. Instalarlo solo en el servidor conserva la vía vanilla; la vista avanzada y el editor necesitan el JAR del cargador correspondiente también en los clientes. Las tres variantes usan el mismo archivo `tablist.json`, las mismas plantillas, diseños e iconos.
+
+### Compilar y probar
+
+- Fabric: `./gradlew -Ploader=fabric build` (Gradle 9.7.1, JVM 25 para Loom; compilador y juego Java 21).
+- Forge: `./gradlew-forge build` con `JAVA_HOME` en Java 21 (Gradle 8.12).
+- NeoForge: `./gradlew-neoforge build` con `JAVA_HOME` en Java 21 (Gradle 8.12).
+- Windows: los mismos comandos con extensión `.bat`.
+- Elige un cargador por ejecución. `build` ejecuta también las 82 comprobaciones de regresión.
+- Prueba visual: `./gradlew -Ploader=fabric :fabric:runSelftest` o `./gradlew-forge :forge:runSelftest`; NeoForge: `./gradlew-neoforge :neoforge:runSelftest`.
+- Simulación de clientes vanilla: cambiar la tarea a `runSelftestVanilla`.
+- Arranque dedicado sin aceptar EULA ni cargar un mundo: `:fabric:runServerSmoke` o `:forge:runServerSmoke` o `:neoforge:runServerSmoke`.
+
+Cada cargador usa su propio mundo de desarrollo en `<cargador>/run/saves/selftest`. Las autopruebas modifican exclusivamente ese mundo; no deben apuntar a un mundo de producción. Los generadores de recursos escriben en `common/src/main/resources`. Para publicar manualmente, las herramientas de `tools/` aceptan `-Loader fabric`, `-Loader forge` o `-Loader neoforge`; `-DryRun` no publica nada.
+
+## Mejoras de la versión 1.2.0
+
+- **Guardado confirmado**: el editor solo marca el diseño como guardado cuando el servidor confirma que se escribió en disco. Ctrl+S guarda; cerrar con cambios pendientes permite guardar, descartar o volver al editor.
+- **Conflictos entre administradores**: cada guardado incluye la revisión de la configuración. Si otro administrador la cambia, se conserva tu borrador y debes exportarlo o cargar la versión del servidor. **Recargar**, en la barra inferior del editor, carga esa versión; Ctrl+Z recupera el borrador anterior.
+- **Recuperación**: cada guardado conserva el archivo anterior como `tablist.json.bak`. Un JSON inválido al arrancar o recargar se conserva intacto; al recargar se mantiene la configuración que ya estaba activa. La escritura prepara un archivo temporal y lo reemplaza al terminar.
+- **Datos privados**: coordenadas, dimensión, vida y los demás datos personales se envían únicamente a su dueño. Nombre, ping, modo, equipo y rango son públicos. En **General → Datos públicos** puedes compartir campos adicionales deliberadamente, separados por comas, por ejemplo `world,health`. Vacío mantiene esos campos privados. Las plantillas de fila que usen datos privados de otros jugadores necesitan autorizar esos campos; el orden por mundo también requiere publicar `world`.
+- **Diseños reutilizables**: **General → Diseños / importar** ofrece Chaos, Minimal y Ocean, además de archivos JSON guardados en `config/chaostablist/designs/` del cliente. **Exportar borrador** guarda una copia con nombre único. Para importar un archivo externo, abre la carpeta desde la biblioteca, añade su JSON y vuelve a abrir la biblioteca. Aplicar un diseño modifica el borrador y puede deshacerse; los presets conservan el nombre del servidor, los cambios por jugador y las opciones de privacidad.
+- **Animaciones**: duplicación independiente, velocidades negativas de marquesina y hasta 64 fotogramas editables.
+- **Diagnósticos**: avisos de etiquetas desconocidas, cierres incorrectos y delimitadores sin cerrar en el header y footer. La vista vanilla usa los mismos valores de respaldo que el servidor; su geometría sigue siendo una aproximación y se indica en pantalla.
+- **Límites**: hasta 32 etiquetas anidadas y 2.048 glifos por plantilla evaluada; 64 animaciones y 512 excepciones de jugador. Los PNG admiten hasta 1.024 × 1.024 píxeles, 256 KB y nombres de 1–64 caracteres (`a-z`, números, `_`, `-`).
+- **Rendimiento**: orden y entradas del cliente reutilizados entre frames, configuración comprimida una vez por revisión y recuento de entidades solo cuando se usa `{entities}`. Las actualizaciones periódicas se detienen con el Tab desactivado o sin jugadores.
+
+Puedes ver la [biblioteca de diseños](screenshots/update-1.2.0/design_library.png), el [aviso de cambios pendientes](screenshots/update-1.2.0/unsaved_confirmation.png) y los [diagnósticos en el editor](screenshots/update-1.2.0/template_diagnostic.png) en las capturas de 1.2.0.
+
+**Compatibilidad de red:** para la vista personalizada y el editor, actualiza el servidor y los clientes a 1.2.0. Los clientes con una versión anterior siguen usando la vía vanilla. Minecraft sigue siendo 1.21.1 con Java 21.
+
+**Pruebas:** `./gradlew build` ejecuta también `regressionTest`, que comprueba persistencia, privacidad, compresión, validación, historial, confirmación de guardado y presets sin abrir Minecraft. `runSelftest` y `runSelftestVanilla` añaden capturas y comprobación del guardado confirmado en un mundo de desarrollo.
 
 ## Capturas
 
@@ -100,7 +148,7 @@ Si Chaos Ranks está instalado se activan `{rank}` (el badge del rango, en la ve
 
 En `<mundo>/chaostablist/`:
 - `tablist.json`: toda la configuración (se puede editar a mano y recargar con `/tablist reload`).
-- `icons/*.png`: imágenes propias (máx. 64, 256 KB cada una). Se mandan a los clientes con el mod y se usan con `<icon:custom/nombre>` o `<img:nombre:ancho:alto>`.
+- `icons/*.png`: imágenes propias (máx. 64, 256 KB cada una, hasta 1.024 × 1.024 píxeles). Se mandan a los clientes con el mod y se usan con `<icon:custom/nombre>` o `<img:nombre:ancho:alto>`.
 
 ## Desarrollo
 
@@ -108,8 +156,8 @@ En `<mundo>/chaostablist/`:
 - `python tools/gen_gui.py`: texturas del editor.
 - `python tools/gen_lang.py`: archivos de idioma (inglés y todas las variantes `es_*`).
 - `python tools/gen_icon.py`: icono del mod.
-- `./gradlew build`: jar en `build/libs/`.
-- `./gradlew runSelftest`: capturas del Tab, de cada pestaña del editor y de los desplegables en `run/screenshots/selftest_*.png`, y prueba el guardado por red. Necesita el mundo `run/saves/selftest`.
+- `./gradlew -Ploader=fabric build` o `./gradlew-forge build`: JAR en `<cargador>/build/libs/`.
+- `./gradlew runSelftest`: capturas del Tab, de cada pestaña del editor y de los desplegables en `<cargador>/run/screenshots/selftest_*.png`, y prueba el guardado por red. Necesita el mundo `run/saves/selftest`.
 - `./gradlew runShowcase` + `python tools/make_showcase.py`: graba las capturas y los GIF de `screenshots/`.
 - `./gradlew runSelftestVanilla`: lo mismo, pero el servidor trata al cliente como vanilla (para ver lo que reciben los clientes sin el mod).
 - `powershell -File tools/upload-curseforge.ps1 -ProjectId <id> [-DryRun]`: sube el jar a CurseForge (token en `CURSEFORGE_TOKEN`).

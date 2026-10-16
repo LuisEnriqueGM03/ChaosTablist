@@ -14,7 +14,11 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "run/screenshots"
+import argparse
+_parser = argparse.ArgumentParser(description="Generate showcase media from one loader's test run")
+_parser.add_argument("--loader", choices=["fabric", "forge", "neoforge"], default="fabric")
+_loader = _parser.parse_args().loader
+SRC = ROOT / _loader / "run/screenshots"
 OUT = ROOT / "screenshots"
 
 # Milisegundos por frame de cada GIF (frames grabados cada 1 o 2 ticks de 50 ms).

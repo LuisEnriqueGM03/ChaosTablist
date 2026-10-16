@@ -1,0 +1,278 @@
+package com.chaos.tablist.server;
+
+import java.lang.management.ManagementFactory;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import com.chaos.tablist.compat.ChaosRanksCompat;
+import com.chaos.tablist.config.TabConfig;
+import com.chaos.tablist.text.TextContext;
+import com.google.gson.JsonObject;
+
+import com.chaos.tablist.platform.Services;
+import net.minecraft.SharedConstants;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.Stats;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.scores.PlayerTeam;
+
+/**
+ * Valores de los placeholders, recalculados una vez por segundo: los globales (TPS, RAM...) y los de cada
+ * jugador (ping, mundo, rango...). Son la única fuente: el servidor evalúa con ellos para los clientes vanilla
+ * y se mandan tal cual a los clientes con mod.
+ */
+public final class ServerValues {
+
+	/** Placeholders que solo conoce el cliente (con el mod se resuelven allí). */
+	public static final Set<String> CLIENT_ONLY = Set.of("fps", "client_ram_used", "client_ram_max", "client_ram_pct",
+			"client_ram", "client_cpu", "gpu", "render_distance", "resolution", "client_mods", "local_weekday");
+
+	private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+	private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
+
+	private static Map<String, String> global = new HashMap<>();
+	private static Map<UUID, Map<String, String>> players = new HashMap<>();
+	private static TabConfig lastConfig;
+    private static Set<String> requiredPlaceholders = Set.of();
+    public static final Set<String> PUBLIC_PLAYER_KEYS = Set.of("player", "uuid", "ping", "gamemode", "team",
+            "has_rank", "rank", "rank_name", "rank_id", "rank_priority");
+
+    public static void clear() { global = new HashMap<>(); players = new HashMap<>(); lastConfig = null; requiredPlaceholders = Set.of(); }
+
+    private static long startedAt = System.currentTimeMillis();
+
+	private ServerValues() {}
+
+	public static void markStarted() {
+		startedAt = System.currentTimeMillis();
+	}
+
+	public static Map<String, String> global() {
+		return global;
+	}
+
+	public static Map<String, String> player(UUID id) {
+		return players.getOrDefault(id, Map.of());
+	}
+
+	public static void update(MinecraftServer server, TabConfig config) {
+		if (lastConfig != config) {
+            lastConfig = config;
+            requiredPlaceholders = com.chaos.tablist.text.TemplateDiagnostics.placeholders(config);
+        }
+        Map<String, String> g = new HashMap<>();
+		g.put("server_name", config.serverName);
+		g.put("motd", server.getMotd());
+		g.put("version", SharedConstants.getCurrentVersion().getName());
+		g.put("online", String.valueOf(server.getPlayerCount()));
+		g.put("max_players", String.valueOf(server.getMaxPlayers()));
+
+		float mspt = server.getCurrentSmoothedTickTime();
+		float rate = server.tickRateManager().tickrate();
+		float tps = mspt <= 0 ? rate : Math.min(rate, 1000f / mspt);
+		g.put("tps", String.format(Locale.ROOT, "%.1f", tps));
+		g.put("mspt", String.format(Locale.ROOT, "%.1f", mspt));
+
+		Runtime rt = Runtime.getRuntime();
+		long used = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
+		long max = rt.maxMemory() / (1024 * 1024);
+		g.put("ram_used", String.valueOf(used));
+		g.put("ram_max", String.valueOf(max));
+		g.put("ram_pct", String.valueOf(max == 0 ? 0 : used * 100 / max));
+		g.put("ram", formatMemory(used, max));
+		g.put("cpu", cpu());
+
+		long up = (System.currentTimeMillis() - startedAt) / 1000;
+		g.put("uptime", duration(up));
+
+		ServerLevel overworld = server.overworld();
+		long dayTime = overworld.getDayTime();
+		g.put("day", String.valueOf(dayTime / 24000));
+		long ticksOfDay = dayTime % 24000;
+		long hours = (ticksOfDay / 1000 + 6) % 24;
+		long minutes = ticksOfDay % 1000 * 60 / 1000;
+		g.put("world_time", String.format(Locale.ROOT, "%02d:%02d", hours, minutes));
+		String weather = overworld.isThundering() ? "thunder" : overworld.isRaining() ? "rain" : "clear";
+		g.put("weather", weather);
+		g.put("weather_icon", switch (weather) {
+			case "thunder" -> "⚡";
+			case "rain" -> "☂";
+			default -> "☀";
+		});
+		LocalDateTime now = LocalDateTime.now();
+		g.put("date", now.format(DATE));
+		g.put("time", now.format(TIME));
+		g.put("chaosranks", String.valueOf(ChaosRanksCompat.present()));
+
+		g.put("is_day", String.valueOf(overworld.isDay()));
+		g.put("moon_phase", String.valueOf(overworld.getMoonPhase() + 1));
+		g.put("difficulty", overworld.getDifficulty().getKey());
+		g.put("view_distance", String.valueOf(server.getPlayerList().getViewDistance()));
+		g.put("sim_distance", String.valueOf(server.getPlayerList().getSimulationDistance()));
+		int entities = 0;
+		int chunks = 0;
+		int worlds = 0;
+		for (ServerLevel level : server.getAllLevels()) {
+			worlds++;
+			chunks += level.getChunkSource().getLoadedChunksCount();
+			if (requiredPlaceholders.contains("entities")) {
+                for (var ignored : level.getAllEntities()) entities++;
+            }
+		}
+		g.put("entities", String.valueOf(entities));
+		g.put("chunks", String.valueOf(chunks));
+		g.put("worlds", String.valueOf(worlds));
+		g.put("threads", String.valueOf(Thread.activeCount()));
+		g.put("java_version", System.getProperty("java.version", "?"));
+		g.put("server_mods", String.valueOf(Services.PLATFORM.modCount()));
+		g.put("port", String.valueOf(server.getPort()));
+
+		int staff = 0;
+		int afk = 0;
+		Map<UUID, Map<String, String>> p = new HashMap<>();
+		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+			Map<String, String> values = playerValues(server, config, player);
+			p.put(player.getUUID(), values);
+			staff += "true".equals(values.get("op")) ? 1 : 0;
+			afk += "true".equals(values.get("afk")) ? 1 : 0;
+		}
+		g.put("staff_online", String.valueOf(staff));
+		g.put("afk_online", String.valueOf(afk));
+		global = g;
+		players = p;
+	}
+
+	private static Map<String, String> playerValues(MinecraftServer server, TabConfig config, ServerPlayer player) {
+		Map<String, String> v = new HashMap<>();
+		v.put("player", player.getScoreboardName());
+		v.put("uuid", player.getStringUUID());
+		v.put("ping", String.valueOf(player.connection.latency()));
+		ServerLevel level = player.serverLevel();
+		v.put("world", level.dimension().location().getPath());
+		v.put("dimension", level.dimension().location().toString());
+		v.put("biome", level.getBiome(player.blockPosition()).unwrapKey()
+				.map(k -> k.location().getPath()).orElse("unknown"));
+		v.put("x", String.valueOf(player.getBlockX()));
+		v.put("y", String.valueOf(player.getBlockY()));
+		v.put("z", String.valueOf(player.getBlockZ()));
+		v.put("health", String.valueOf((int) Math.ceil(player.getHealth())));
+		v.put("max_health", String.valueOf((int) Math.ceil(player.getMaxHealth())));
+		v.put("food", String.valueOf(player.getFoodData().getFoodLevel()));
+		v.put("level", String.valueOf(player.experienceLevel));
+		v.put("gamemode", player.gameMode.getGameModeForPlayer().getName());
+		v.put("deaths", String.valueOf(player.getStats().getValue(Stats.CUSTOM.get(Stats.DEATHS))));
+		v.put("kills", String.valueOf(player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAYER_KILLS))));
+		v.put("mob_kills", String.valueOf(player.getStats().getValue(Stats.CUSTOM.get(Stats.MOB_KILLS))));
+		v.put("playtime", duration(player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME)) / 20L));
+		long idle = net.minecraft.Util.getMillis() - player.getLastActionTime();
+		v.put("afk", String.valueOf(idle > 5 * 60 * 1000));
+		v.put("op", String.valueOf(server.getPlayerList().isOp(player.getGameProfile())));
+		PlayerTeam team = player.getTeam();
+		v.put("team", team == null ? "" : team.getName());
+		v.put("display_name", player.getDisplayName().getString());
+		v.put("xp", String.valueOf(player.totalExperience));
+		v.put("xp_pct", String.valueOf((int) (player.experienceProgress * 100)));
+		v.put("armor", String.valueOf(player.getArmorValue()));
+		v.put("saturation", String.valueOf((int) player.getFoodData().getSaturationLevel()));
+		v.put("air", String.valueOf(player.getMaxAirSupply() <= 0 ? 100
+				: Math.max(0, player.getAirSupply()) * 100 / player.getMaxAirSupply()));
+		v.put("light", String.valueOf(level.getMaxLocalRawBrightness(player.blockPosition())));
+		v.put("facing", switch (player.getDirection()) {
+			case NORTH -> "N";
+			case SOUTH -> "S";
+			case EAST -> "E";
+			default -> "W";
+		});
+		v.put("chunk_x", String.valueOf(player.chunkPosition().x));
+		v.put("chunk_z", String.valueOf(player.chunkPosition().z));
+		ItemStack held = player.getMainHandItem();
+		v.put("held_item", held.isEmpty() ? "" : held.getHoverName().getString());
+		v.put("language", player.clientInformation().language());
+		v.put("jumps", String.valueOf(player.getStats().getValue(Stats.CUSTOM.get(Stats.JUMP))));
+		v.put("fish", String.valueOf(player.getStats().getValue(Stats.CUSTOM.get(Stats.FISH_CAUGHT))));
+		int walkedCm = player.getStats().getValue(Stats.CUSTOM.get(Stats.WALK_ONE_CM))
+				+ player.getStats().getValue(Stats.CUSTOM.get(Stats.SPRINT_ONE_CM));
+		v.put("walked", String.format(Locale.ROOT, "%.1f km", walkedCm / 100_000f));
+		v.put("since_death", duration(player.getStats().getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_DEATH)) / 20L));
+
+		ChaosRanksCompat.Rank rank = ChaosRanksCompat.rankOf(player);
+		v.put("has_rank", String.valueOf(rank != null));
+		v.put("rank", rank == null ? "" : TextContext.JSON_MARK + Component.Serializer.toJson(rank.badge(), server.registryAccess()));
+		v.put("rank_name", rank == null ? "" : rank.label());
+		v.put("rank_id", rank == null ? "" : rank.id());
+		v.put("rank_priority", String.valueOf(rank == null ? 0 : rank.priority()));
+		return v;
+	}
+
+    public static Map<String, String> publicPlayer(UUID id) { return publicValues(player(id), lastConfig); }
+
+    public static Map<String, String> publicValues(Map<String, String> values, TabConfig config) {
+        Map<String, String> out = new HashMap<>();
+        values.forEach((key, value) -> {
+            if (PUBLIC_PLAYER_KEYS.contains(key) || config != null && config.publicPlayerValues.contains(key)) out.put(key, value);
+        });
+        return out;
+    }
+
+	/** {"g": {...}, "p": {uuid: {...}}} para los clientes con mod. */
+	public static String toJson() {
+		JsonObject root = new JsonObject();
+		JsonObject g = new JsonObject();
+		global.forEach(g::addProperty);
+		root.add("g", g);
+		JsonObject p = new JsonObject();
+		players.forEach((id, values) -> {
+			JsonObject o = new JsonObject();
+			publicValues(values, lastConfig).forEach(o::addProperty);
+			p.add(id.toString(), o);
+		});
+		root.add("p", p);
+		return root.toString();
+	}
+
+    public static String selfJson(UUID id) {
+        JsonObject own = new JsonObject();
+        player(id).forEach(own::addProperty);
+        return own.toString();
+    }
+
+	public static String formatMemory(long usedMb, long maxMb) {
+		if (maxMb >= 1024) {
+			return String.format(Locale.ROOT, "%.1f/%.1f GB", usedMb / 1024f, maxMb / 1024f);
+		}
+		return usedMb + "/" + maxMb + " MB";
+	}
+
+	public static String duration(long seconds) {
+		long d = seconds / 86400;
+		long h = seconds % 86400 / 3600;
+		long m = seconds % 3600 / 60;
+		if (d > 0) {
+			return d + "d " + h + "h";
+		}
+		if (h > 0) {
+			return h + "h " + m + "m";
+		}
+		return m + "m " + seconds % 60 + "s";
+	}
+
+	private static String cpu() {
+		try {
+			if (ManagementFactory.getOperatingSystemMXBean() instanceof com.sun.management.OperatingSystemMXBean os) {
+				double load = os.getProcessCpuLoad();
+				return load < 0 ? "0" : String.valueOf(Math.round(load * 100));
+			}
+		} catch (Throwable ignored) {
+			// No todas las JVM lo tienen.
+		}
+		return "0";
+	}
+}

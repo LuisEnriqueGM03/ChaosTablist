@@ -1,0 +1,35 @@
+plugins {
+    id 'net.minecraftforge.gradle' version '6.0.54'
+    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+}
+apply from: rootProject.file('gradle/loader.gradle')
+// Forge needs classes and mod resources in one development output directory.
+sourceSets.main.output.resourcesDir = sourceSets.main.java.destinationDirectory.get().asFile
+tasks.named('processResources') { destinationDir = sourceSets.main.java.destinationDirectory.get().asFile }
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+    runs {
+        configureEach {
+            workingDirectory file('run')
+            mods { chaostablist { source sourceSets.main } }
+        }
+        client { }
+        server { args '--nogui' }
+        serverSmoke { parent runs.server; workingDirectory file('run-server-smoke'); args '--initSettings' }
+        selftest { parent runs.client; property 'chaostablist.selftest', 'true'; if (!project.hasProperty('manualWorld')) args '--quickPlaySingleplayer', 'selftest' }
+        selftestVanilla {
+            parent runs.client; property 'chaostablist.selftest', 'true'; property 'chaostablist.forceVanilla', 'true'
+            if (!project.hasProperty('manualWorld')) args '--quickPlaySingleplayer', 'selftest'
+        }
+        showcase {
+            parent runs.client; property 'chaostablist.showcase', 'true'
+            if (!project.hasProperty('manualWorld')) args '--quickPlaySingleplayer', 'selftest', '--width', '1280', '--height', '720'
+        }
+    }
+}
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
+}
+mixin { add sourceSets.main, 'chaostablist.refmap.json'; config 'chaostablist.mixins.json' }
+jar { manifest { attributes('MixinConfigs': 'chaostablist.mixins.json') } }

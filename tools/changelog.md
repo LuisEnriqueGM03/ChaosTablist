@@ -1,3 +1,32 @@
+## NeoForge and graphical retest (2026-10-16)
+
+- Added a native NeoForge 21.1 port for Minecraft 1.21.1, including optional typed payloads, lifecycle events and client integration.
+- Forge and NeoForge completed the in-game editor, private data, network save, presets, diagnostics and conflict recovery tests after the graphics driver repair.
+- Strengthened loader isolation checks to inspect all three loaders.
+- Forge is beta: the additional vanilla simulation failed during integrated-server initialization. Fabric and NeoForge passed both in-game modes. See VALIDATION.md.
+
+## Fabric / Forge builds for Minecraft 1.21.1 (1.2.0)
+
+- Shared implementation with separate native Fabric and Forge entrypoints, lifecycle events and optional versioned networking.
+- Forge does not depend on Fabric API. Both loaders use the same configuration, private placeholders, editor, animations and design library.
+- Separate production JARs and source JARs, Java 21 bytecode, loader-specific regression checks and game selftests.
+- Resource generation and upload preparation adapted to the multi-loader layout; no publication is performed by the build.
+
+## Chaos Tablist 1.2.0
+
+- Private player placeholders are delivered only to their owner. Administrators may explicitly opt individual fields into public synchronization.
+- Durable saves with server acknowledgements, revision conflict detection, permission feedback and timeouts. Drafts remain available on failure.
+- Temporary-file configuration writes with a previous-file backup; malformed reloads preserve the source file and the live configuration.
+- Ctrl+S, unsaved-changes confirmation and explicit reload of the server version, with undo recovery.
+- Local JSON design library, draft exports and Chaos, Minimal and Ocean presets. Independent animation duplication and 64 editable frames.
+- Safer JSON, PNG and compressed payload handling, finite numeric values, parser depth and glyph budgets. Negative scrolling speeds no longer throw.
+- Shared vanilla placeholder fallbacks, vanilla-like ordering/limits and an explicit approximate-preview label.
+- Cached player entries, cached compressed configuration and entity counts only when requested. Periodic updates stop while disabled or empty.
+- Extracted editor persistence, history and design-library components. Java 21 toolchain and automated headless regression checks wired into build.
+- All editor messages available in English and Spanish variants.
+
+Server and client should both use 1.2.0 for the custom view/editor. Older clients fall back to vanilla packets.
+
 ## Chaos Tablist 1.1.0
 
 - **Effect editor**: every effect in the Effect list has a ✎ button to set its colors, speed and other options, and to choose whether it wraps a text or an icon, with a live preview before inserting it.

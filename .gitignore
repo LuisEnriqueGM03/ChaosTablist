@@ -42,3 +42,9 @@ replay_*.log
 # logs
 
 *.log
+
+# Loader development worlds and output
+**/run/
+**/run-server-smoke/
+**/build/
+dist/

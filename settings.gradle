@@ -1,13 +1,14 @@
 pluginManagement {
-	repositories {
-		maven {
-			name = 'Fabric'
-			url = 'https://maven.fabricmc.net/'
-		}
-		mavenCentral()
-		gradlePluginPortal()
-	}
+    repositories {
+        maven { url = 'https://maven.fabricmc.net/' }
+        maven { url = 'https://maven.minecraftforge.net/' }
+        maven { url = 'https://maven.neoforged.net/releases' }
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public' }
+        mavenCentral()
+        gradlePluginPortal()
+    }
 }
-
-// Should match your modid
 rootProject.name = 'chaostablist'
+def loader = providers.gradleProperty('loader').orElse(providers.gradleProperty('default_loader').orElse('fabric')).get()
+if (!(loader in ['fabric', 'forge', 'neoforge'])) throw new GradleException('loader must be fabric, forge or neoforge; build them separately')
+include(loader)

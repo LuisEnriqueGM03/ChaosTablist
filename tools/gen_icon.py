@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PIL import Image
 
-OUT = Path(__file__).resolve().parent.parent / "src/main/resources/assets/chaostablist/icon.png"
+OUT = Path(__file__).resolve().parent.parent / "common/src/main/resources/assets/chaostablist/icon.png"
 S = 32          # se dibuja a 32x32 y se escala x4 sin suavizar
 C1 = (0xB5, 0x7C, 0xF0)
 C2 = (0x3F, 0xD8, 0xEA)
