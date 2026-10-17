@@ -1,31 +1,39 @@
-# Validación de Chaos Tablist 1.2.0 — Minecraft 1.21.4
+# Chaos Tablist 1.2.0 — Minecraft 26.1
 
-16 de octubre de 2026. Java 21. Fabric Loader 0.19.5 / Fabric API 0.119.4+1.21.4, Forge 54.1.14 y NeoForge 21.4.158.
-
-## Resultados
+17 de octubre de 2026. Java 25. Fabric Loader 0.19.5 y Fabric API 0.145.1+26.1; Forge 62.0.9; NeoForge 26.1.0.19-beta.
 
 | Comprobación | Fabric | Forge | NeoForge |
 |---|---|---|---|
-| JAR de producción y fuentes | PASS | PASS | PASS |
-| Regresiones e aislamiento de cargadores | 82/82 | 82/82 | 82/82 |
-| Metadatos, bytecode Java 21, 162 iconos y ocho idiomas | PASS | PASS | PASS |
-| Tab, editor, datos privados y guardado por red | PASS | PASS | PASS |
-| Diseños, aviso de cambios, diagnósticos y conflictos | PASS | PASS | PASS |
+| Compilación y 82 comprobaciones de regresión | PASS | PASS | PASS |
+| Metadatos, bytecode Java 25, idiomas e iconos | PASS | PASS | PASS |
+| Tab, nueve pestañas, ventanas de efectos y colores | PASS | PASS | PASS |
+| Clic de pestaña, Ctrl+A y escritura Unicode | PASS | PASS | PASS |
+| PNG recibido por red, cabeza e ítem en el Tab | PASS | PASS | PASS |
+| Guardado confirmado y conflictos de revisión | PASS | PASS | PASS |
+| Presets, biblioteca, cierre y diagnósticos | PASS | PASS | PASS |
 | Simulación vanilla y guardado confirmado | PASS | PASS | PASS |
-| Arranque dedicado --initSettings | No ejecutado | PASS hasta EULA | PASS hasta EULA |
+| Inicialización dedicada sin aceptar EULA | PASS limitado | PASS limitado | LIMITADO |
 
-La adaptación usa las APIs de dibujo de 1.21.4 para texturas y cabezas, alfa explícito y la consulta actualizada al registro de ítems. Un identificador de ítem inexistente muestra la barrera de respaldo. Los recursos usan pack_format 46. Se revisaron capturas reales de Fabric.
+Se revisaron capturas reales del Tab y del editor. Las capturas de `screenshots/26.1/` incluyen el PNG normal y otro con alfa 0.4, una cabeza y un diamante. Las pruebas se ejecutaron con el Java gráfico del JDK 25 y la NVIDIA GeForce RTX 3060 Laptop GPU, sin cambiar los ajustes del sistema. Forge y NeoForge también arrancaron con su ventana inicial activada.
 
-## Nueva comprobación gráfica
+La adaptación actualiza la extracción de interfaz, alfa explícito del texto y texturas, FontDescription, entrada de teclado y ratón, registro de paquetes Fabric, eventos Forge, permisos, perfiles, serialización de componentes y reloj del mundo. La fase lunar global se consulta en el punto de aparición. El paquete cubre los formatos de recursos 84.0 y datos 101.1. Forge incluye la marca Mixin JAVA_21 porque su motor 0.8.7 no reconoce JAVA_25; el bytecode y la ejecución siguen siendo Java 25.
 
-Forge y NeoForge completaron las autopruebas normales y la simulación vanilla el 16 de octubre de 2026. Se verificaron capturas de ambos editores, guardado por red, diseños, avisos, diagnósticos y conflictos. Los cuatro procesos terminaron con [selftest] PASS y BUILD SUCCESSFUL.
+Los errores de JSON y escritura que aparecen durante regressionTest son fallos provocados para comprobar que el archivo y la configuración anterior se conservan.
 
-El fallo inicial se reprodujo al usar java.exe. La preferencia existente de alto rendimiento de Windows estaba asignada a javaw.exe; al usar ese ejecutable del mismo JDK 21, las pruebas pasaron. tools/windows-gpu.init.gradle reproduce ese arranque sin modificar los ajustes del sistema. Se mantuvo earlyWindowControl=false en las carpetas locales de pruebas; no se certificó de nuevo la ventana inicial activada. Consulta GRAPHICS_RETEST_1.21.4.md.
+## Alcance y límites
 
-## Reproducción y alcance
+Las pruebas dentro del juego usan cliente y servidor integrado y el transporte real de cada cargador. La simulación vanilla fuerza los paquetes y respaldos vanilla en un cliente con el mod; no equivale a conectar otro cliente vanilla independiente. No se hizo una sesión de dos clientes ni una partida multijugador en servidor dedicado.
 
-Fabric: gradlew -Ploader=fabric build con JVM 25 para Loom. Forge: gradlew-forge build con JAVA_HOME en Java 21 y Gradle 8.12. NeoForge: gradlew -Ploader=neoforge build. Compilador, bytecode y juego: Java 21. En Windows usar los ejecutables .bat.
+El arranque dedicado usa --initSettings, sin aceptar la EULA ni crear un mundo: Fabric genera los ajustes; Forge termina en la comprobación de la EULA. NeoForge genera server.properties y eula.txt, pero su lanzador 11.0.5 termina con código 1 porque no existe un hilo de servidor tras esa salida deliberada. Esa comprobación se registra como limitada, sin ocultar el error ni tratarla como un arranque completo aprobado.
 
-Autopruebas: :fabric:runSelftest, :forge:runSelftest y :neoforge:runSelftest. Abren o crean automáticamente un mundo plano llamado selftest dentro de <cargador>/run/saves, después de llegar al menú inicial. La simulación vanilla usa runSelftestVanilla. Inspección de los tres JAR: python tools/validate-ports.py.
+NeoForge 26.1.0.19-beta es la dependencia exacta probada. Las tres variantes son exclusivamente para Minecraft 26.1, no para 26.1.1 o 26.1.2.
 
-La simulación vanilla no sustituye una sesión con un cliente sin mod independiente. Las pruebas dedicadas inicializan archivos y se detienen en la EULA; no aceptan sus condiciones ni prueban un mundo activo. No se probaron dos clientes independientes, Chaos Ranks instalado, un launcher externo ni cargas de muchos jugadores. Los errores de JSON y disco de las regresiones son casos negativos deliberados. No se modificaron mundos originales.
+## Reproducción
+
+Usar Java 25 y compilar un cargador por ejecución. Los comandos equivalentes de Windows terminan en .bat.
+
+- Fabric: `./gradlew -Ploader=fabric :fabric:build :fabric:runSelftest :fabric:runSelftestVanilla`
+- Forge: `./gradlew-forge -Pselftest :forge:build :forge:runClient`; después `./gradlew-forge -PselftestVanilla :forge:runClient`
+- NeoForge: `./gradlew-neoforge :neoforge:build :neoforge:runSelftest :neoforge:runSelftestVanilla`
+- En el equipo Windows probado añadir `-I tools/windows-gpu.init.gradle` para usar javaw.exe del mismo JDK.
+- Verificación del contenido de los tres JAR: `python tools/validate-ports.py`.

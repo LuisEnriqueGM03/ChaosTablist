@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 VERSION = next(line.split("=", 1)[1] for line in (ROOT / "gradle.properties").read_text().splitlines() if line.startswith("version="))
 
 for loader in ("fabric", "forge", "neoforge"):
-    jar = ROOT / loader / "build/libs" / f"chaostablist-{loader}-1.21.4-{VERSION}.jar"
+    jar = ROOT / loader / "build/libs" / f"chaostablist-{loader}-26.1-{VERSION}.jar"
     with zipfile.ZipFile(jar) as z:
         names = set(z.namelist())
         provider = z.read("META-INF/services/com.chaos.tablist.platform.Platform").decode().strip()
@@ -19,30 +19,34 @@ for loader in ("fabric", "forge", "neoforge"):
         for name in names:
             if name.endswith(".class") and name.startswith("com/chaos/tablist/"):
                 content = z.read(name)
-                assert int.from_bytes(content[6:8], "big") == 65, name
+                assert int.from_bytes(content[6:8], "big") == 69, name
                 for other, api in {"fabric": b"net/fabricmc/", "forge": b"net/minecraftforge/", "neoforge": b"net/neoforged/"}.items():
                     if other != loader:
                         assert api not in content, f"{other} dependency in {loader} jar: {name}"
-        assert int.from_bytes(z.read("com/chaos/tablist/ChaosTablist.class")[6:8], "big") == 65
+        assert int.from_bytes(z.read("com/chaos/tablist/ChaosTablist.class")[6:8], "big") == 69
         assert "LICENSE" in names
         assert len(json.loads(z.read("assets/chaostablist/badge_meta.json"))["icons"]) == 162
         languages = [json.loads(z.read(f"assets/chaostablist/lang/{lang}.json")) for lang in
                      ("en_us", "es_es", "es_mx", "es_ar", "es_cl", "es_ec", "es_uy", "es_ve")]
         assert all(set(lang) == set(languages[0]) for lang in languages)
         mixins = json.loads(z.read("chaostablist.mixins.json"))
+        assert mixins["compatibilityLevel"] == ("JAVA_21" if loader == "forge" else "JAVA_25")
+        assert json.loads(z.read("pack.mcmeta"))["pack"] == {"description": "Chaos Tablist", "min_format": [84, 0], "max_format": [101, 1]}
         assert mixins["required"] and len(mixins["mixins"]) == 1 and len(mixins["client"]) == 3
         if loader == "fabric":
             meta = json.loads(z.read("fabric.mod.json"))
             assert meta["id"] == "chaostablist" and meta["version"] == VERSION
             assert "fabric-api" in meta["depends"]
+            assert meta["depends"]["minecraft"] == ">=26.1 <26.1.1"
+            assert meta["depends"]["java"] == ">=25"
             assert "META-INF/mods.toml" not in names and "META-INF/neoforge.mods.toml" not in names
         else:
             metadata_path = "META-INF/neoforge.mods.toml" if loader == "neoforge" else "META-INF/mods.toml"
             meta = tomllib.loads(z.read(metadata_path).decode())
             assert meta["mods"][0]["modId"] == "chaostablist" and meta["mods"][0]["version"] == VERSION
             deps = {d["modId"]: d for d in meta["dependencies"]["chaostablist"]}
-            assert deps[loader]["versionRange"] == ("[21.4.158,21.5)" if loader == "neoforge" else "[54.1.14,55)")
-            assert deps["minecraft"]["versionRange"] == "[1.21.4,1.21.5)"
+            assert deps[loader]["versionRange"] == ("[26.1.0.19-beta,26.1.1)" if loader == "neoforge" else "[62.0.9,63)")
+            assert deps["minecraft"]["versionRange"] == "[26.1,26.1.1)"
             assert "fabric.mod.json" not in names
             if loader == "forge":
                 assert "MixinConfigs: chaostablist.mixins.json" in z.read("META-INF/MANIFEST.MF").decode()

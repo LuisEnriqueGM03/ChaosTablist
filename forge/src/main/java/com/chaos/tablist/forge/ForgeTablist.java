@@ -18,18 +18,18 @@ import net.minecraftforge.event.server.ServerStoppedEvent;
 public final class ForgeTablist {
     public ForgeTablist() {
         ForgeNetwork.register();
-        MinecraftForge.EVENT_BUS.addListener(this::commands);
-        MinecraftForge.EVENT_BUS.addListener(this::started);
-        MinecraftForge.EVENT_BUS.addListener(this::stopped);
-        MinecraftForge.EVENT_BUS.addListener(this::tick);
-        MinecraftForge.EVENT_BUS.addListener(this::joined);
-        MinecraftForge.EVENT_BUS.addListener(this::left);
+        RegisterCommandsEvent.BUS.addListener(this::commands);
+        ServerStartedEvent.BUS.addListener(this::started);
+        ServerStoppedEvent.BUS.addListener(this::stopped);
+        TickEvent.ServerTickEvent.Post.BUS.addListener(this::tick);
+        PlayerEvent.PlayerLoggedInEvent.BUS.addListener(this::joined);
+        PlayerEvent.PlayerLoggedOutEvent.BUS.addListener(this::left);
         if (FMLEnvironment.dist == Dist.CLIENT) ForgeClient.register();
     }
     private void commands(RegisterCommandsEvent event) { TabCommand.register(event.getDispatcher()); }
     private void started(ServerStartedEvent event) { ChaosTablist.started(event.getServer()); }
     private void stopped(ServerStoppedEvent event) { ChaosTablist.stopped(); }
-    private void tick(TickEvent.ServerTickEvent.Post event) { TabTicker.tick(event.getServer()); }
+    private void tick(TickEvent.ServerTickEvent.Post event) { TabTicker.tick(event.server()); }
     private void joined(PlayerEvent.PlayerLoggedInEvent event) { if (event.getEntity() instanceof ServerPlayer player) TabTicker.join(player); }
     private void left(PlayerEvent.PlayerLoggedOutEvent event) { if (event.getEntity() instanceof ServerPlayer player) TabTicker.leave(player); }
 }

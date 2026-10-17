@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 /**
@@ -148,7 +148,7 @@ public final class Evaluator {
 			return cached;
 		}
 		try {
-			Component c = Component.Serializer.fromJson(json, ctx.registries());
+			Component c = net.minecraft.network.chat.ComponentSerialization.CODEC.parse(ctx.registries().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE), com.google.gson.JsonParser.parseString(json)).getOrThrow();
 			if (JSON_CACHE.size() > 512) {
 				JSON_CACHE.clear();
 			}
@@ -282,9 +282,9 @@ public final class Evaluator {
 			case "st" -> kids.forEach(g -> g.strikethrough = g.strikethrough == null ? Boolean.TRUE : g.strikethrough);
 			case "obf" -> kids.forEach(g -> g.obfuscated = g.obfuscated == null ? Boolean.TRUE : g.obfuscated);
 			case "font" -> {
-				ResourceLocation font = ResourceLocation.tryParse(arg(String.join(":", tag.args())));
+				Identifier font = Identifier.tryParse(arg(String.join(":", tag.args())));
 				if (font != null) {
-					kids.forEach(g -> g.font = g.font == null ? font : g.font);
+					kids.forEach(g -> g.font = g.font == null ? new net.minecraft.network.chat.FontDescription.Resource(font) : g.font);
 				}
 			}
 			case "gradient" -> gradient(tag, kids);
@@ -716,7 +716,7 @@ public final class Evaluator {
 			}
 			Style style = g.mcStyle(true);
 			if (g.fallback != null) {
-				style = style.withFont(Style.DEFAULT_FONT);
+				style = style.withFont(net.minecraft.network.chat.FontDescription.DEFAULT);
 			}
 			if (runStyle != null && !style.equals(runStyle)) {
 				root.append(Component.literal(run.toString()).setStyle(runStyle));

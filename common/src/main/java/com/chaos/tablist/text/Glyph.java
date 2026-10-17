@@ -6,7 +6,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Un carácter (o elemento especial: cabeza, ítem, imagen, espacio) ya evaluado, con todo su estilo.
@@ -34,7 +34,7 @@ public final class Glyph {
 	@Nullable public Boolean underlined;
 	@Nullable public Boolean strikethrough;
 	@Nullable public Boolean obfuscated;
-	@Nullable public ResourceLocation font;
+	@Nullable public net.minecraft.network.chat.FontDescription font;
 
 	// Solo cliente con mod.
 	public float dx;
@@ -84,7 +84,7 @@ public final class Glyph {
 		if (s.isObfuscated()) {
 			obfuscated = true;
 		}
-		if (!Style.DEFAULT_FONT.equals(s.getFont())) {
+		if (!net.minecraft.network.chat.FontDescription.DEFAULT.equals(s.getFont())) {
 			font = s.getFont();
 		}
 		return this;

@@ -18,7 +18,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Anchos y codepoints de la fuente de iconos y badges (los genera tools/gen_font.py en badge_meta.json).
@@ -27,9 +27,9 @@ import net.minecraft.resources.ResourceLocation;
 public final class Icons {
 
 	/** 11 px de alto: menús. */
-	public static final ResourceLocation FONT = ChaosTablist.id("badge");
+	public static final net.minecraft.network.chat.FontDescription FONT = new net.minecraft.network.chat.FontDescription.Resource(ChaosTablist.id("badge"));
 	/** Mismos codepoints en 9 px: el Tab (sus filas miden 9 px). */
-	public static final ResourceLocation FONT_COMPACT = ChaosTablist.id("badge_compact");
+	public static final net.minecraft.network.chat.FontDescription FONT_COMPACT = new net.minecraft.network.chat.FontDescription.Resource(ChaosTablist.id("badge_compact"));
 
 	public static final int MAX_LABEL = 24;
 

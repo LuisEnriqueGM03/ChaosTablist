@@ -10,8 +10,8 @@ public final class ForgeClient {
     private ForgeClient() {}
     public static void register() {
         ChaosTablistClient.initialize();
-        MinecraftForge.EVENT_BUS.addListener(ForgeClient::tick);
-        MinecraftForge.EVENT_BUS.addListener(ForgeClient::logout);
+        TickEvent.ClientTickEvent.Post.BUS.addListener(ForgeClient::tick);
+        ClientPlayerNetworkEvent.LoggingOut.BUS.addListener(ForgeClient::logout);
     }
     public static void receive(CustomPacketPayload payload) { ChaosTablistClient.receive(payload); }
     private static void tick(TickEvent.ClientTickEvent.Post event) { ChaosTablistClient.tick(); }

@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Badge en pixel art (igual que las etiquetas de Chaos Ranks), en tres capas que se dibujan una encima de otra
@@ -31,7 +31,7 @@ public final class Badges {
 	/**
 	 * Añade a {@code out} los glifos del badge. Los clientes vanilla ven "[ICONO TEXTO]" en el color del fondo.
 	 */
-	public static void build(List<Glyph> out, int unit, ResourceLocation font, String rawLabel, int bgColor,
+	public static void build(List<Glyph> out, int unit, net.minecraft.network.chat.FontDescription font, String rawLabel, int bgColor,
 			int textColor, @Nullable String iconId, int iconColor, @Nullable Integer frameColor, boolean bold) {
 		String label = Icons.sanitize(rawLabel);
 		Icons.Icon icon = Icons.icon(iconId);
@@ -109,7 +109,7 @@ public final class Badges {
 	}
 
 	/** Un icono suelto, del color indicado. */
-	public static Glyph icon(Icons.Icon icon, int unit, ResourceLocation font, int color) {
+	public static Glyph icon(Icons.Icon icon, int unit, net.minecraft.network.chat.FontDescription font, int color) {
 		Glyph g = new Glyph(String.valueOf(icon.glyph()), unit);
 		g.font = font;
 		g.fallback = icon.fallback();
@@ -127,7 +127,7 @@ public final class Badges {
 		return (bold ? l.boldWidth() : l.width()) + 1;
 	}
 
-	private static void seg(List<Glyph> out, int unit, ResourceLocation font, CharSequence text, int color) {
+	private static void seg(List<Glyph> out, int unit, net.minecraft.network.chat.FontDescription font, CharSequence text, int color) {
 		for (int i = 0; i < text.length(); i++) {
 			Glyph g = new Glyph(String.valueOf(text.charAt(i)), unit);
 			g.font = font;

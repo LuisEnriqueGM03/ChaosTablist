@@ -6,16 +6,15 @@ import java.util.List;
 import java.util.Map;
 
 import com.chaos.tablist.text.Glyph;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.PlayerFaceExtractor;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.FormattedText;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
@@ -78,11 +77,10 @@ public final class RichText {
 	 * Dibuja los glifos con la parte de arriba del texto en {@code y}. Las imágenes altas crecen hacia arriba
 	 * (quedan apoyadas en la línea del texto).
 	 */
-	public static void draw(GuiGraphics g, Font font, List<Glyph> glyphs, float x, float y, float alphaMul, boolean shadow) {
+	public static void draw(GuiGraphicsExtractor g, Font font, List<Glyph> glyphs, float x, float y, float alphaMul, boolean shadow) {
 		if (glyphs.isEmpty() || alphaMul <= 0.01f) {
 			return;
 		}
-		RenderSystem.enableBlend();
 		float[] xs = new float[glyphs.size()];
 		float cx = x;
 		for (int i = 0; i < glyphs.size(); i++) {
@@ -112,7 +110,7 @@ public final class RichText {
 		}
 	}
 
-	private static void drawRun(GuiGraphics g, Font font, Glyph style, String text, float x, float y, float alphaMul,
+	private static void drawRun(GuiGraphicsExtractor g, Font font, Glyph style, String text, float x, float y, float alphaMul,
 			boolean shadow) {
 		float a = Mth.clamp(style.alpha * alphaMul, 0, 1);
 		if (a < 0.02f) {
@@ -143,18 +141,18 @@ public final class RichText {
 		text(g, font, seq, px, py, alpha | rgb, vanillaShadow);
 	}
 
-	private static void text(GuiGraphics g, Font font, FormattedCharSequence seq, float x, float y, int color, boolean shadow) {
+	private static void text(GuiGraphicsExtractor g, Font font, FormattedCharSequence seq, float x, float y, int color, boolean shadow) {
 		if (x == Math.floor(x) && y == Math.floor(y)) {
-			g.drawString(font, seq, (int) x, (int) y, color, shadow);
+			g.text(font, seq, (int) x, (int) y, color, shadow);
 			return;
 		}
-		g.pose().pushPose();
-		g.pose().translate(x, y, 0);
-		g.drawString(font, seq, 0, 0, color, shadow);
-		g.pose().popPose();
+		g.pose().pushMatrix();
+		g.pose().translate(x, y);
+		g.text(font, seq, 0, 0, color, shadow);
+		g.pose().popMatrix();
 	}
 
-	private static void drawBackgrounds(GuiGraphics g, Font font, List<Glyph> glyphs, float[] xs, float y, float alphaMul) {
+	private static void drawBackgrounds(GuiGraphicsExtractor g, Font font, List<Glyph> glyphs, float[] xs, float y, float alphaMul) {
 		Map<Glyph.Background, float[]> boxes = new IdentityHashMap<>();
 		for (int i = 0; i < glyphs.size(); i++) {
 			Glyph gl = glyphs.get(i);
@@ -187,7 +185,7 @@ public final class RichText {
 	}
 
 	/** Rectángulo, con las esquinas recortadas 1 px si {@code round}. */
-	public static void rect(GuiGraphics g, int x0, int y0, int x1, int y1, int argb, boolean round) {
+	public static void rect(GuiGraphicsExtractor g, int x0, int y0, int x1, int y1, int argb, boolean round) {
 		if (!round || x1 - x0 < 3 || y1 - y0 < 3) {
 			g.fill(x0, y0, x1, y1, argb);
 			return;
@@ -197,7 +195,7 @@ public final class RichText {
 		g.fill(x0 + 1, y1 - 1, x1 - 1, y1, argb);
 	}
 
-	public static void border(GuiGraphics g, int x0, int y0, int x1, int y1, int argb, boolean round) {
+	public static void border(GuiGraphicsExtractor g, int x0, int y0, int x1, int y1, int argb, boolean round) {
 		int r = round ? 1 : 0;
 		g.fill(x0 + r, y0, x1 - r, y0 + 1, argb);
 		g.fill(x0 + r, y1 - 1, x1 - r, y1, argb);
@@ -210,7 +208,7 @@ public final class RichText {
 		return a << 24 | (argb & 0xFFFFFF);
 	}
 
-	private static void drawSpecial(GuiGraphics g, Glyph gl, float x, float y, float alphaMul) {
+	private static void drawSpecial(GuiGraphicsExtractor g, Glyph gl, float x, float y, float alphaMul) {
 		if (gl.hidden || gl.kind == Glyph.Kind.SPACE) {
 			return;
 		}
@@ -218,40 +216,37 @@ public final class RichText {
 		if (a < 0.02f) {
 			return;
 		}
-		RenderSystem.enableBlend();
-		RenderSystem.setShaderColor(1, 1, 1, a);
-		g.pose().pushPose();
-		g.pose().translate(x + gl.dx, y + gl.dy, 0);
+		g.pose().pushMatrix();
+		g.pose().translate(x + gl.dx, y + gl.dy);
 		switch (gl.kind) {
 			case HEAD -> {
 				Minecraft mc = Minecraft.getInstance();
 				PlayerInfo info = mc.getConnection() == null ? null : mc.getConnection().getPlayerInfo(gl.text);
 				if (info != null) {
-					PlayerFaceRenderer.draw(g, info.getSkin(), 0, 0, 8, scaleAlpha(0xFFFFFFFF,a));
+					PlayerFaceExtractor.extractRenderState(g, info.getSkin(), 0, 0, 8, scaleAlpha(0xFFFFFFFF,a));
 				} else {
-					PlayerFaceRenderer.draw(g, net.minecraft.client.resources.DefaultPlayerSkin.get(java.util.UUID.nameUUIDFromBytes(gl.text.getBytes())), 0, 0, 8, scaleAlpha(0xFFFFFFFF,a));
+					PlayerFaceExtractor.extractRenderState(g, net.minecraft.client.resources.DefaultPlayerSkin.get(java.util.UUID.nameUUIDFromBytes(gl.text.getBytes())), 0, 0, 8, scaleAlpha(0xFFFFFFFF,a));
 				}
 			}
 			case ITEM -> {
-				ResourceLocation id = ResourceLocation.tryParse(gl.text);
+				Identifier id = Identifier.tryParse(gl.text);
 				Item item = id == null ? Items.BARRIER : BuiltInRegistries.ITEM.getValue(id);
-				g.pose().scale(0.5f, 0.5f, 1);
-				g.renderItem(new ItemStack(item == null || item == Items.AIR ? Items.BARRIER : item), 0, 0);
+				g.pose().scale(0.5f, 0.5f);
+				g.item(new ItemStack(item == null || item == Items.AIR ? Items.BARRIER : item), 0, 0);
 			}
 			case IMAGE -> {
 				CustomIcons.Icon icon = CustomIcons.get(gl.text);
 				int w = imageWidth(gl);
 				int h = imageHeight(gl);
 				if (icon != null) {
-					g.blit(net.minecraft.client.renderer.RenderType::guiTextured, icon.texture(), 0, 8 - h, w, h, 0, 0, icon.width(), icon.height(), icon.width(), icon.height());
+					g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, icon.texture(), 0, 8 - h, 0, 0, w, h, icon.width(), icon.height(), icon.width(), icon.height(), scaleAlpha(0xFFFFFFFF, a));
 				} else {
 					g.fill(0, 8 - h, w, 8, 0x80FF00FF);
 				}
 			}
 			default -> {}
 		}
-		g.pose().popPose();
-		RenderSystem.setShaderColor(1, 1, 1, 1);
+		g.pose().popMatrix();
 	}
 
 	/** Ancho de una imagen: el pedido, o el que corresponde a su alto manteniendo la proporción del PNG. */

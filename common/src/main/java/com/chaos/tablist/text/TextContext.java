@@ -3,7 +3,7 @@ package com.chaos.tablist.text;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.HolderLookup;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** Lo que una plantilla necesita para evaluarse: valores de placeholders, el reloj y para quién se pinta. */
 public interface TextContext {
@@ -32,7 +32,7 @@ public interface TextContext {
 	int pingColor(int ping);
 
 	/** Fuente de los iconos y badges (compacta en el Tab, normal en menús). */
-	default ResourceLocation iconFont() {
+	default net.minecraft.network.chat.FontDescription iconFont() {
 		return Icons.FONT_COMPACT;
 	}
 

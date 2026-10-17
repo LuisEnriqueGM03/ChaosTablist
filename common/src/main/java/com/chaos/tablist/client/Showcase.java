@@ -13,7 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.scores.DisplaySlot;
 
 /**
@@ -157,12 +157,14 @@ public final class Showcase {
 	private static void setup(Minecraft mc) {
 		mc.options.pauseOnLostFocus = false;
 		mc.options.guiScale().set(2);
-		mc.resizeDisplay();
+		mc.resizeGui();
 		server(mc, (server, p) -> {
-			server.getPlayerList().op(p.getGameProfile());
-			p.serverLevel().getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, server);
-			p.serverLevel().setDayTime(6000);
-			p.serverLevel().setWeatherParameters(6000, 0, false, false);
+			server.getPlayerList().op(p.nameAndId());
+			p.level().getGameRules().set(GameRules.ADVANCE_TIME, false, server);
+			((net.minecraft.world.clock.ServerClockManager)p.level().clockManager()).setTotalTicks(p.level().dimensionType().defaultClock().orElseThrow(), 6000L);
+			p.level().getWeatherData().setClearWeatherTime(6000);
+            p.level().getWeatherData().setRaining(false);
+            p.level().getWeatherData().setThundering(false);
 			// Sin el marcador que deja la autoprueba vanilla.
 			server.getScoreboard().setDisplayObjective(DisplaySlot.LIST, null);
 			TabServer.apply(server, new TabConfig());
@@ -257,6 +259,6 @@ public final class Showcase {
 	}
 
 	private static void shot(Minecraft mc, String name) {
-		Screenshot.grab(mc.gameDirectory, name + ".png", mc.getMainRenderTarget(), msg -> {});
+		Screenshot.grab(mc.gameDirectory, name + ".png", mc.getMainRenderTarget(), 1, msg -> {});
 	}
 }

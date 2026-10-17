@@ -5,7 +5,7 @@ import org.gradle.jvm.toolchain.JavaLauncher
 gradle.projectsEvaluated {
     rootProject.allprojects {
         tasks.withType(JavaExec).configureEach {
-            def consoleLauncher = project.javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }.get()
+            def consoleLauncher = project.javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }.get()
             def guiFile = rootProject.layout.file(rootProject.providers.provider { new File(consoleLauncher.executablePath.asFile.parentFile, 'javaw.exe') }).get()
             javaLauncher.set([
                 getMetadata: { consoleLauncher.metadata },

@@ -11,8 +11,8 @@ import net.minecraft.server.level.ServerPlayer;
 public final class ForgePlatform implements Platform {
     public String name() { return "forge"; }
     public Path configDirectory() { return FMLPaths.CONFIGDIR.get(); }
-    public boolean isModLoaded(String id) { return ModList.get().isLoaded(id); }
-    public int modCount() { return ModList.get().getMods().size(); }
+    public boolean isModLoaded(String id) { return ModList.isLoaded(id); }
+    public int modCount() { return ModList.getMods().size(); }
     public boolean canSend(ServerPlayer player, CustomPacketPayload.Type<?> type) {
         return ForgeNetwork.CHANNEL.isRemotePresent(player.connection.getConnection());
     }

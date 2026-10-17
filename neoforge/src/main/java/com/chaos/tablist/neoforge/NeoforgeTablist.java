@@ -25,7 +25,7 @@ public final class NeoforgeTablist {
         NeoForge.EVENT_BUS.addListener(this::tick);
         NeoForge.EVENT_BUS.addListener(this::joined);
         NeoForge.EVENT_BUS.addListener(this::left);
-        if (FMLEnvironment.dist == Dist.CLIENT) NeoforgeClient.register();
+        if (FMLEnvironment.getDist() == Dist.CLIENT) NeoforgeClient.register();
     }
     private void commands(RegisterCommandsEvent event) { TabCommand.register(event.getDispatcher()); }
     private void started(ServerStartedEvent event) { ChaosTablist.started(event.getServer()); }

@@ -17,5 +17,5 @@ public final class NeoforgePlatform implements Platform {
         return player.connection.hasChannel(type.id());
     }
     public void send(ServerPlayer player, CustomPacketPayload payload) { PacketDistributor.sendToPlayer(player, payload); }
-    public void sendToServer(CustomPacketPayload payload) { PacketDistributor.sendToServer(payload); }
+    public void sendToServer(CustomPacketPayload payload) { net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(payload); }
 }

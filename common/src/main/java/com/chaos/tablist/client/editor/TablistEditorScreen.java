@@ -35,8 +35,8 @@ import com.chaos.tablist.text.Icons;
 import com.chaos.tablist.text.Palette;
 
 import com.chaos.tablist.platform.Services;
-import net.minecraft.Util;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.util.Util;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineEditBox;
@@ -48,7 +48,7 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
@@ -79,9 +79,9 @@ public class TablistEditorScreen extends Screen {
 	/** EFFECT_EDIT va al final para no mover los índices que usa la autoprueba. */
 	private enum Popup { NONE, COLOR, EFFECT, ICON, DATA, EFFECT_EDIT }
 
-	private static final ResourceLocation PANEL = ChaosTablist.id("panel");
-	private static final ResourceLocation INSET = ChaosTablist.id("inset");
-	private static final ResourceLocation CELL = ChaosTablist.id("cell");
+	private static final Identifier PANEL = ChaosTablist.id("panel");
+	private static final Identifier INSET = ChaosTablist.id("inset");
+	private static final Identifier CELL = ChaosTablist.id("cell");
 
 	private static final int M = 4;
 	private static final int ROW = 19;
@@ -92,11 +92,11 @@ public class TablistEditorScreen extends Screen {
 	private static final int INK = 0xFF0C0704;
 	private static final int ROW_SELECTED = 0xFF5A3A14;
 	private static final int ROW_HOVER = 0xFF3A2410;
-	private static final int LABEL = 0xE8C77A;
-	private static final int HINT = 0x9A8466;
-	private static final int FIELD_TEXT = 0xFFEBC0;
-	private static final int TAG_TEXT = 0xC79BFF;
-	private static final int PLACEHOLDER_TEXT = 0x6FE3FF;
+	private static final int LABEL = 0xFFE8C77A;
+	private static final int HINT = 0xFF9A8466;
+	private static final int FIELD_TEXT = 0xFFFFEBC0;
+	private static final int TAG_TEXT = 0xFFC79BFF;
+	private static final int PLACEHOLDER_TEXT = 0xFF6FE3FF;
 
 	private final boolean chaosRanks;
 	private TabConfig original;
@@ -300,7 +300,7 @@ public class TablistEditorScreen extends Screen {
 		box.setValue(value == null ? "" : value);
 		box.moveCursorToStart(false);
 		if (template) {
-			box.setFormatter((text, offset) -> highlight(box.getValue(), offset, text));
+			box.addFormatter((text, offset) -> highlight(box.getValue(), offset, text));
 			templateBoxes.add(box);
 		}
 		box.setResponder(text -> {
@@ -312,7 +312,7 @@ public class TablistEditorScreen extends Screen {
 	}
 
 	private MultiLineEditBox area(int x, int y, int w, int h, String value, Consumer<String> onChange) {
-		MultiLineEditBox box = new MultiLineEditBox(font, x, y, w, h, Lang.tr("screen.lines_hint"), Component.empty());
+		MultiLineEditBox box = MultiLineEditBox.builder().setX(x).setY(y).setPlaceholder(Lang.tr("screen.lines_hint")).build(font, w, h, Component.empty());
 		box.setValue(value);
 		((MultiLineEditBoxAccessor) box).chaostablist$textField().seekCursor(Whence.ABSOLUTE, 0);
 		box.setValueListener(text -> {
@@ -359,7 +359,7 @@ public class TablistEditorScreen extends Screen {
 	private Row stepper(Component name, IntSupplier get, IntConsumer set, int min, int max, int step) {
 		return row((x, y, w) -> {
 			label(x, y + 4, name, w - 70);
-			labels.add(new Label(x + w - 51, y + 4, () -> Component.literal(String.valueOf(get.getAsInt())), 0xFFFFFF, 0));
+			labels.add(new Label(x + w - 51, y + 4, () -> Component.literal(String.valueOf(get.getAsInt())), 0xFFFFFFFF, 0));
 			button(x + w - 66, y, 14, FH, Component.literal("-"), () -> {
 				set.accept(Mth.clamp(get.getAsInt() - step, min, max));
 				changed();
@@ -374,7 +374,7 @@ public class TablistEditorScreen extends Screen {
 	private Row floatStepper(Component name, Supplier<Float> get, Consumer<Float> set, float min, float max, float step) {
 		return row((x, y, w) -> {
 			label(x, y + 4, name, w - 70);
-			labels.add(new Label(x + w - 51, y + 4, () -> Component.literal(String.format("%.2f", get.get())), 0xFFFFFF, 0));
+			labels.add(new Label(x + w - 51, y + 4, () -> Component.literal(String.format("%.2f", get.get())), 0xFFFFFFFF, 0));
 			button(x + w - 66, y, 14, FH, Component.literal("-"), () -> {
 				set.accept(Mth.clamp(Math.round((get.get() - step) * 100) / 100f, min, max));
 				changed();
@@ -630,7 +630,7 @@ public class TablistEditorScreen extends Screen {
             });
             button(x + half + 2, y, half, FH, Lang.tr("button.export_design"), () -> {
                 try { var path = DesignLibrary.export(draft); status(Lang.tr("msg.design_exported", path.getFileName().toString())); }
-                catch (Exception e) { status(Lang.tr("msg.design_failed").withColor(0xFF5555)); }
+                catch (Exception e) { status(Lang.tr("msg.design_failed").withColor(0xFFFF5555)); }
             });
         }));
         rows.add(hintRow(chaosRanks ? Lang.tr("screen.chaosranks_on") : Lang.tr("screen.chaosranks_off"), w));
@@ -717,7 +717,7 @@ public class TablistEditorScreen extends Screen {
 			box.setTextColor(FIELD_TEXT);
 			box.setMaxLength(TabConfig.MAX_TEMPLATE);
 			box.setValue(lines.get(line));
-			box.setFormatter((text, offset) -> highlight(box.getValue(), offset, text));
+			box.addFormatter((text, offset) -> highlight(box.getValue(), offset, text));
 			box.setResponder(v -> {
 				if (line < lines.size()) {
 					lines.set(line, v);
@@ -796,7 +796,7 @@ public class TablistEditorScreen extends Screen {
 		LinkedHashMap<UUID, String> people = new LinkedHashMap<>();
 		if (minecraft != null && minecraft.getConnection() != null) {
 			for (PlayerInfo info : minecraft.getConnection().getListedOnlinePlayers()) {
-				people.put(info.getProfile().getId(), info.getProfile().getName());
+				people.put(info.getProfile().id(), info.getProfile().name());
 			}
 		}
 		draft.players.forEach((id, o) -> {
@@ -813,7 +813,7 @@ public class TablistEditorScreen extends Screen {
 		List<Component> items = new ArrayList<>();
 		for (UUID id : ids) {
 			boolean custom = draft.players.containsKey(id.toString());
-			items.add(Component.literal((custom ? "✎ " : "") + people.get(id)).withColor(custom ? 0xFFC300 : 0xFFFFFF));
+			items.add(Component.literal((custom ? "✎ " : "") + people.get(id)).withColor(custom ? 0xFFFFC300 : 0xFFFFFFFF));
 		}
 		int[] f = sideList(c, items, ids.indexOf(selectedPlayer), i -> {
 			selectedPlayer = ids.get(i);
@@ -1264,7 +1264,7 @@ public class TablistEditorScreen extends Screen {
             byte[] data = TabPayloads.gzip(clean.toJson());
             if (data.length > TabPayloads.MAX_C2S) {
                 autoApply = false;
-                status(Lang.tr("msg.too_big", data.length / 1024).withColor(0xFF5555));
+                status(Lang.tr("msg.too_big", data.length / 1024).withColor(0xFFFF5555));
                 closeAfterSave = false;
                 return;
             }
@@ -1276,8 +1276,8 @@ public class TablistEditorScreen extends Screen {
             autoApply = false; closeAfterSave = false;
             if (saves.pending() != null) {
                 saves.abort("network");
-                status(Lang.tr("msg.save_network").withColor(0xFF5555));
-            } else status(Lang.tr("msg.invalid").withColor(0xFF5555));
+                status(Lang.tr("msg.save_network").withColor(0xFFFF5555));
+            } else status(Lang.tr("msg.invalid").withColor(0xFFFF5555));
         }
     }
 
@@ -1287,11 +1287,11 @@ public class TablistEditorScreen extends Screen {
             original = TabConfig.fromJson(saves.savedJson());
             dirty = !draft.toJson().equals(pendingDraftJson);
             if (!dirty) { draft = original.copy(); settleHistory(); TabRenderer.invalidate(); }
-            status(Lang.tr("msg.saved").withColor(0x55FF55));
+            status(Lang.tr("msg.saved").withColor(0xFF55FF55));
             if (closeAfterSave && !dirty) { minecraft.setScreen(null); return; }
         } else {
             autoApply = false;
-            status(Lang.tr("msg.save_" + result.reason()).withColor(0xFF5555));
+            status(Lang.tr("msg.save_" + result.reason()).withColor(0xFFFF5555));
         }
         closeAfterSave = false;
         rebuildWidgets();
@@ -1302,7 +1302,7 @@ public class TablistEditorScreen extends Screen {
         if (dirty) {
             remoteConflict = true;
             autoApply = false;
-            status(Lang.tr("msg.save_conflict").withColor(0xFF5555));
+            status(Lang.tr("msg.save_conflict").withColor(0xFFFF5555));
         } else {
             original = config.copy(); draft = config.copy();
             saves = new EditorSaveState(revision, draft.toJson());
@@ -1349,17 +1349,18 @@ public class TablistEditorScreen extends Screen {
         if (history.settling(Util.getMillis())) settleHistory();
         if (saves.timedOut(Util.getMillis())) {
             autoApply = false; closeAfterSave = false;
-            status(Lang.tr("msg.save_timeout").withColor(0xFF5555));
+            status(Lang.tr("msg.save_timeout").withColor(0xFFFF5555));
         }
 	}
 
 	@Override
-	public boolean keyPressed(int key, int scanCode, int modifiers) {
-        if (popup == Popup.NONE && hasControlDown() && key == GLFW.GLFW_KEY_S) { save(); return true; }
-		if (popup == Popup.NONE && hasControlDown() && !hasAltDown()
+	public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        int key = event.key();
+        if (popup == Popup.NONE && event.hasControlDownWithQuirk() && key == GLFW.GLFW_KEY_S) { save(); return true; }
+		if (popup == Popup.NONE && event.hasControlDownWithQuirk() && !event.hasAltDown()
 				&& (key == GLFW.GLFW_KEY_Z || key == GLFW.GLFW_KEY_Y)) {
 			// Ctrl+Z deshace, Ctrl+Y o Ctrl+Shift+Z rehace (en todo el editor).
-			undo(key == GLFW.GLFW_KEY_Y || hasShiftDown());
+			undo(key == GLFW.GLFW_KEY_Y || event.hasShiftDown());
 			return true;
 		}
 		if (key == GLFW.GLFW_KEY_ESCAPE && popup != Popup.NONE) {
@@ -1380,22 +1381,24 @@ public class TablistEditorScreen extends Screen {
 			pickColor(pickAlpha << 24 | pickRgb);
 			return true;
 		}
-		return super.keyPressed(key, scanCode, modifiers);
+		return super.keyPressed(event);
 	}
 
 	// ---------------------------------------------------------------------------------------------
 	// Ratón
 
 	@Override
-	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+	public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x(), mouseY = event.y();
+        int button = event.button();
 		if (popup != Popup.NONE) {
 			if (popup == Popup.COLOR && hexBox != null && hexOk != null && hexPreview != null) {
-				if (hexBox.mouseClicked(mouseX, mouseY, button)) {
+				if (hexBox.mouseClicked(event, doubleClick)) {
 					setFocused(hexBox);
 					startTextDrag(hexBox, mouseX);
 					return true;
 				}
-				if (hexOk.mouseClicked(mouseX, mouseY, button) || hexPreview.mouseClicked(mouseX, mouseY, button)) {
+				if (hexOk.mouseClicked(event, doubleClick) || hexPreview.mouseClicked(event, doubleClick)) {
 					return true;
 				}
 			}
@@ -1412,7 +1415,7 @@ public class TablistEditorScreen extends Screen {
 				return true;
 			}
 		}
-		if (super.mouseClicked(mouseX, mouseY, button)) {
+		if (super.mouseClicked(event, doubleClick)) {
 			if (button == 0 && getFocused() instanceof EditBox box && box.isMouseOver(mouseX, mouseY)) {
 				startTextDrag(box, mouseX);
 			}
@@ -1624,7 +1627,7 @@ public class TablistEditorScreen extends Screen {
 	 * animado). Devuelve la fila que tiene el ratón encima.
 	 */
 	@Nullable
-	private PopupRow renderRows(GuiGraphics g, List<PopupRow> rows, int x, int y, int w, int h, int mouseX, int mouseY,
+	private PopupRow renderRows(GuiGraphicsExtractor g, List<PopupRow> rows, int x, int y, int w, int h, int mouseX, int mouseY,
 			boolean editButtons) {
 		int visible = Math.max(1, h / 12);
 		popupScroll = Mth.clamp(popupScroll, 0, Math.max(0, rows.size() - visible));
@@ -1636,7 +1639,7 @@ public class TablistEditorScreen extends Screen {
 			PopupRow row = rows.get(k + popupScroll);
 			int ry = y + k * 12;
 			if (row.header() != null) {
-				g.drawString(font, row.header(), x, ry + 2, GOLD, false);
+				g.text(font, row.header(), x, ry + 2, GOLD, false);
 				int hw = font.width(row.header());
 				g.fill(x + hw + 4, ry + 6, x + w, ry + 7, 0xFF5A3A14);
 				continue;
@@ -1647,7 +1650,7 @@ public class TablistEditorScreen extends Screen {
 				hovered = row;
 			}
 			boolean variable = row.label().startsWith("{");
-			g.drawString(font, font.plainSubstrByWidth(row.label(), half - 6), x + 4, ry + 2,
+			g.text(font, font.plainSubstrByWidth(row.label(), half - 6), x + 4, ry + 2,
 					variable ? PLACEHOLDER_TEXT : FIELD_TEXT, false);
 			boolean edit = editButtons && row.snippet() != null && row.snippet().editable();
 			int exampleEnd = edit ? x + w - EDIT_W - 2 : x + w;
@@ -1660,12 +1663,12 @@ public class TablistEditorScreen extends Screen {
 				boolean overEdit = over && mouseX >= bx;
 				hoverEdit |= overEdit;
 				g.fill(bx, ry + 1, bx + EDIT_W, ry + 11, overEdit ? GOLD : 0xFF5A3A14);
-				g.drawString(font, "✎", bx + (EDIT_W - font.width("✎")) / 2 + 1, ry + 2, overEdit ? INK : GOLD_LIGHT, false);
+				g.text(font, "✎", bx + (EDIT_W - font.width("✎")) / 2 + 1, ry + 2, overEdit ? INK : GOLD_LIGHT, false);
 			}
 		}
 		if (rows.size() > visible) {
 			String s = "▲▼ " + (popupScroll + 1) + "/" + (rows.size() - visible + 1);
-			g.drawString(font, s, x + w - font.width(s), y - 11, HINT, false);
+			g.text(font, s, x + w - font.width(s), y - 11, HINT, false);
 		}
 		return hovered;
 	}
@@ -1874,8 +1877,10 @@ public class TablistEditorScreen extends Screen {
 	}
 
 	private boolean effectEditorClick(double mouseX, double mouseY, int button) {
+        var event = new net.minecraft.client.input.MouseButtonEvent(mouseX, mouseY, new net.minecraft.client.input.MouseButtonInfo(button, 0));
+        boolean doubleClick = false;
 		for (AbstractWidget w : new ArrayList<>(popupWidgets)) {
-			if (w.visible && w.mouseClicked(mouseX, mouseY, button)) {
+			if (w.visible && w.mouseClicked(event, doubleClick)) {
 				if (w instanceof EditBox box) {
 					setFocused(box);
 					startTextDrag(box, mouseX);
@@ -1901,15 +1906,15 @@ public class TablistEditorScreen extends Screen {
 		}
 	}
 
-	private void renderEffectEditor(GuiGraphics g, int[] r, int mouseX, int mouseY) {
+	private void renderEffectEditor(GuiGraphicsExtractor g, int[] r, int mouseX, int mouseY) {
 		for (int[] f : popupFields) {
-			g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, f[0], f[1], f[2], f[3]);
+			g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, INSET, f[0], f[1], f[2], f[3]);
 		}
 		for (Label l : popupLabels) {
 			drawLabel(g, l);
 		}
 		for (AbstractWidget w : popupWidgets) {
-			w.render(g, mouseX, mouseY, 0);
+			w.extractRenderState(g, mouseX, mouseY, 0);
 		}
 		for (Swatch s : popupSwatches) {
 			int c = ColorUtil.parse(s.color().get(), 0);
@@ -1923,14 +1928,14 @@ public class TablistEditorScreen extends Screen {
 		int py = r[1] + r[3] - 44;
 		g.fill(x, py - 3, x + w, py - 2, 0xFF5A3A14);
 		Component looks = Lang.tr("screen.looks_like");
-		g.drawString(font, looks, x, py + 1, HINT, false);
+		g.text(font, looks, x, py + 1, HINT, false);
 		int lx = x + font.width(looks) + 4;
 		String built = buildEffect();
 		ClientContext ctx = new ClientContext(draft, selfValues(), ClientState.global(), ClientContext.now(), previewOpenedAt, false);
 		g.enableScissor(lx, py - 2, x + w, py + 11);
 		RichText.draw(g, font, RichText.lines(previewEval(built, ctx)).get(0), lx, py + 1, 1, true);
 		g.disableScissor();
-		g.drawString(font, font.plainSubstrByWidth(built, w), x, py + 12, TAG_TEXT, false);
+		g.text(font, font.plainSubstrByWidth(built, w), x, py + 12, TAG_TEXT, false);
 	}
 
 	// ----- Selector de color
@@ -1985,7 +1990,9 @@ public class TablistEditorScreen extends Screen {
 	}
 
 	@Override
-	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+	public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x(), mouseY = event.y();
+        int button = event.button();
 		if (draggingAlpha) {
 			setAlphaFrom(mouseX);
 			return true;
@@ -1995,14 +2002,15 @@ public class TablistEditorScreen extends Screen {
 			dragBox.moveCursorTo(textIndexAt(dragBox, mouseX), true);
 			return true;
 		}
-		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+		return super.mouseDragged(event, dragX, dragY);
 	}
 
 	@Override
-	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+	public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        int button = event.button();
 		draggingAlpha = false;
 		dragBox = null;
-		return super.mouseReleased(mouseX, mouseY, button);
+		return super.mouseReleased(event);
 	}
 
 	// ----- Seleccionar texto con el ratón en los campos de una línea
@@ -2107,19 +2115,19 @@ public class TablistEditorScreen extends Screen {
 	// Dibujo
 
 	@Override
-	public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-		renderTransparentBackground(g);
-		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, PANEL, 0, 0, width, height);
-		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, M, contentTop(), leftW(), bottomY() - 3 - contentTop());
-		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, previewX(), contentTop(), previewW(), bottomY() - 3 - contentTop());
+	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+		extractTransparentBackground(g);
+		g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, PANEL, 0, 0, width, height);
+		g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, INSET, M, contentTop(), leftW(), bottomY() - 3 - contentTop());
+		g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, INSET, previewX(), contentTop(), previewW(), bottomY() - 3 - contentTop());
 		for (int[] f : fields) {
-			g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, f[0], f[1], f[2], f[3]);
+			g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, INSET, f[0], f[1], f[2], f[3]);
 		}
 	}
 
 	@Override
-	public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-		super.render(g, mouseX, mouseY, partialTick);
+	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+		super.extractRenderState(g, mouseX, mouseY, partialTick);
 		renderTitle(g);
 		for (Label l : labels) {
 			drawLabel(g, l);
@@ -2132,7 +2140,7 @@ public class TablistEditorScreen extends Screen {
 		}
 		if (scrollInfo != null) {
 			String s = "▲▼ " + (scrollInfo[2] + 1) + "/" + (scrollInfo[3] + 1);
-			g.drawString(font, s, scrollInfo[0] - font.width(s), scrollInfo[1] + 2, HINT, false);
+			g.text(font, s, scrollInfo[0] - font.width(s), scrollInfo[1] + 2, HINT, false);
 		}
 		if (list != null) {
 			renderList(g, mouseX, mouseY);
@@ -2159,23 +2167,23 @@ public class TablistEditorScreen extends Screen {
 	}
 
 	/** Etiquetas: maxWidth &gt; 0 = partir en líneas; &lt; 0 = recortar a una línea. */
-	private void drawLabel(GuiGraphics g, Label l) {
+	private void drawLabel(GuiGraphicsExtractor g, Label l) {
 		Component text = l.text().get();
 		if (l.maxWidth() > 0) {
 			int y = l.y();
 			for (FormattedCharSequence line : font.split(text, l.maxWidth())) {
-				g.drawString(font, line, l.x(), y, l.color(), false);
+				g.text(font, line, l.x(), y, l.color(), false);
 				y += 10;
 			}
 		} else if (l.maxWidth() < 0 && font.width(text) > -l.maxWidth()) {
 			String cut = font.plainSubstrByWidth(text.getString(), -l.maxWidth() - font.width("…")) + "…";
-			g.drawString(font, cut, l.x(), l.y(), l.color(), false);
+			g.text(font, cut, l.x(), l.y(), l.color(), false);
 		} else {
-			g.drawString(font, text, l.x(), l.y(), l.color(), false);
+			g.text(font, text, l.x(), l.y(), l.color(), false);
 		}
 	}
 
-	private void renderTitle(GuiGraphics g) {
+	private void renderTitle(GuiGraphicsExtractor g) {
 		List<Glyph> badge = new ArrayList<>();
 		Badges.build(badge, 0, Icons.FONT, "CHAOS TABLIST", 0xE8B23A, 0x2A1606, "players", 0x2A1606, 0x5A3A08, false);
 		RichText.draw(g, font, badge, M + 2, 7, 1, false);
@@ -2185,10 +2193,10 @@ public class TablistEditorScreen extends Screen {
 		int color;
 		if (Util.getMillis() < statusUntil) {
 			text = status;
-			color = 0xFFFFFF;
+			color = 0xFFFFFFFF;
 		} else if (dirty) {
 			text = Lang.tr("screen.unsaved");
-			color = 0xFFAA00;
+			color = 0xFFFFAA00;
 		} else {
 			text = remoteConflict ? Lang.tr("msg.save_conflict") : !saves.error().isEmpty() ? Lang.tr("msg.save_" + saves.error())
                 : Lang.tr(saves.pending() != null ? "msg.saving" : dirty ? "msg.unsaved" : "msg.up_to_date");
@@ -2196,12 +2204,12 @@ public class TablistEditorScreen extends Screen {
 		}
 		String s = font.plainSubstrByWidth(text.getString(), room);
 		int tx = width - M - font.width(s);
-		g.drawString(font, Component.literal(s).withStyle(text.getStyle()), Math.max(x, tx), 7, color, false);
+		g.text(font, Component.literal(s).withStyle(text.getStyle()), Math.max(x, tx), 7, color, false);
 	}
 
-	private void renderList(GuiGraphics g, int mouseX, int mouseY) {
+	private void renderList(GuiGraphicsExtractor g, int mouseX, int mouseY) {
 		ListArea l = list;
-		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, l.x(), l.y(), l.w(), l.h());
+		g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, INSET, l.x(), l.y(), l.w(), l.h());
 		g.enableScissor(l.x() + 2, l.y() + 2, l.x() + l.w() - 2, l.y() + l.h() - 2);
 		for (int i = 0; i < l.items().size(); i++) {
 			int ry = l.y() + 2 + i * 12 - listScroll;
@@ -2212,16 +2220,16 @@ public class TablistEditorScreen extends Screen {
 			} else if (hovered) {
 				g.fill(l.x() + 2, ry, l.x() + l.w() - 2, ry + 12, ROW_HOVER);
 			}
-			g.drawString(font, l.items().get(i), l.x() + 6, ry + 2, 0xFFFFFF, false);
+			g.text(font, l.items().get(i), l.x() + 6, ry + 2, 0xFFFFFFFF, false);
 		}
 		g.disableScissor();
 	}
 
 	/** Las líneas del editor visual, ya pintadas; la elegida resaltada. */
-	private void renderLines(GuiGraphics g, int mouseX, int mouseY) {
+	private void renderLines(GuiGraphicsExtractor g, int mouseX, int mouseY) {
 		int[] a = lineArea;
 		List<String> lines = lineTarget;
-		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, a[0], a[1], a[2], a[3]);
+		g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, INSET, a[0], a[1], a[2], a[3]);
 		int visible = Math.max(1, (a[3] - 4) / 12);
 		if (selectedLine < lineScroll) {
 			lineScroll = selectedLine;
@@ -2242,21 +2250,21 @@ public class TablistEditorScreen extends Screen {
 				g.fill(a[0] + 2, ry, a[0] + a[2] - 2, ry + 12, ROW_HOVER);
 			}
 			String num = String.valueOf(i + 1);
-			g.drawString(font, num, a[0] + 16 - font.width(num), ry + 2, HINT, false);
+			g.text(font, num, a[0] + 16 - font.width(num), ry + 2, HINT, false);
 			String line = lines.get(i);
 			if (i == inlineLine && inlineBox != null) {
 				// Se está editando aquí: el campo se dibuja encima.
 				g.fill(a[0] + 18, ry, a[0] + a[2] - 2, ry + 12, 0xFF1A0F08);
 				g.fill(a[0] + 18, ry + 11, a[0] + a[2] - 2, ry + 12, GOLD);
 			} else if (line.isBlank()) {
-				g.drawString(font, Lang.tr("screen.empty_line"), a[0] + 20, ry + 2, 0x6A5A46, false);
+				g.text(font, Lang.tr("screen.empty_line"), a[0] + 20, ry + 2, 0xFF6A5A46, false);
 			} else {
 				RichText.draw(g, font, RichText.lines(previewEval(line, ctx)).get(0), a[0] + 20, ry + 2, 1, true);
 			}
 		}
 		g.disableScissor();
 		if (inlineBox != null) {
-			inlineBox.render(g, mouseX, mouseY, 0);
+			inlineBox.extractRenderState(g, mouseX, mouseY, 0);
 		}
 		// Explicación al dejar el ratón un rato sobre la lista.
 		boolean overList = popup == Popup.NONE && mouseX >= a[0] && mouseX < a[0] + a[2] && mouseY >= a[1] && mouseY < a[1] + a[3];
@@ -2265,7 +2273,7 @@ public class TablistEditorScreen extends Screen {
 		} else if (linesHoverSince == 0) {
 			linesHoverSince = Util.getMillis();
 		} else if (Util.getMillis() - linesHoverSince > 700 && inlineBox == null) {
-			setTooltipForNextRenderPass(Lang.tr("screen.lines.tip"));
+			g.setTooltipForNextFrame(Lang.tr("screen.lines.tip"), mouseX, mouseY);
 		}
 	}
 
@@ -2291,7 +2299,7 @@ public class TablistEditorScreen extends Screen {
         }
     }
 
-	private void renderPreview(GuiGraphics g, int mouseX, int mouseY) {
+	private void renderPreview(GuiGraphicsExtractor g, int mouseX, int mouseY) {
 		int px = previewX();
 		int py = contentTop();
 		int pw = previewW();
@@ -2299,13 +2307,13 @@ public class TablistEditorScreen extends Screen {
         if (!diagnostic.getString().isEmpty()) {
             var messages = font.split(diagnostic, Math.max(20, pw - 10));
             int count = Math.min(3, messages.size());
-            for (int i = 0; i < count; i++) g.drawString(font, messages.get(i), px + 5, bottom - count * 10 + i * 10, 0xFFBB55, false);
+            for (int i = 0; i < count; i++) g.text(font, messages.get(i), px + 5, bottom - count * 10 + i * 10, 0xFFFFBB55, false);
             if (mouseX >= px && mouseX < px + pw && mouseY >= bottom - count * 10 && mouseY <= bottom)
-                setTooltipForNextRenderPass(diagnostic);
+                g.setTooltipForNextFrame(diagnostic, mouseX, mouseY);
             bottom -= count * 10 + 5;
         }
 		Component title = Lang.tr(vanillaPreview ? "screen.preview_vanilla" : "screen.preview");
-		g.drawString(font, font.plainSubstrByWidth(title.getString(), pw - 10), px + 5, py + 5, LABEL, false);
+		g.text(font, font.plainSubstrByWidth(title.getString(), pw - 10), px + 5, py + 5, LABEL, false);
 		float progress = 1;
 		if (previewAnimStart > 0) {
 			progress = Mth.clamp((Util.getMillis() - previewAnimStart) / (float) Math.max(1, draft.layout.openMillis), 0, 1);
@@ -2314,10 +2322,10 @@ public class TablistEditorScreen extends Screen {
 		try {
 			var board = minecraft != null && minecraft.level != null ? minecraft.level.getScoreboard() : null;
 			var objective = board == null ? null : board.getDisplayObjective(DisplaySlot.LIST);
-			TabRenderer.render(g, font, draft, previewEntries(), ClientState.global(), px + pw / 2, py + 17, pw - 8,
+			TabRenderer.extractRenderState(g, font, draft, previewEntries(), ClientState.global(), px + pw / 2, py + 17, pw - 8,
 					bottom - py - 19, objective, board, ClientContext.now(), previewOpenedAt, progress, vanillaPreview);
 		} catch (RuntimeException e) {
-			g.drawString(font, Component.literal("Error: " + e.getMessage()), px + 6, py + 20, 0xFF5555, false);
+			g.text(font, Component.literal("Error: " + e.getMessage()), px + 6, py + 20, 0xFFFF5555, false);
 		}
 		g.disableScissor();
 	}
@@ -2337,7 +2345,7 @@ public class TablistEditorScreen extends Screen {
 		return minecraft != null && minecraft.player != null ? minecraft.player.getScoreboardName() : "Steve";
 	}
 
-	private void renderIconsTab(GuiGraphics g, int mouseX, int mouseY) {
+	private void renderIconsTab(GuiGraphicsExtractor g, int mouseX, int mouseY) {
 		int[] c = content();
 		drawLabel(g, new Label(c[0], c[1], () -> Lang.tr("screen.icons_hint"), LABEL, -c[2]));
 		String hovered = renderIconGrid(g, iconArea(), mouseX, mouseY);
@@ -2348,7 +2356,7 @@ public class TablistEditorScreen extends Screen {
 
 	/** Dibuja la rejilla de iconos y devuelve el texto del que tiene el ratón encima. */
 	@Nullable
-	private String renderIconGrid(GuiGraphics g, int[] area, int mouseX, int mouseY) {
+	private String renderIconGrid(GuiGraphicsExtractor g, int[] area, int mouseX, int mouseY) {
 		int cell = 18;
 		int cols = Math.max(1, area[2] / cell);
 		int rows = Math.max(1, area[3] / cell);
@@ -2365,7 +2373,7 @@ public class TablistEditorScreen extends Screen {
 				String id = ids.get(i);
 				int cx = area[0] + c * cell;
 				int cy = area[1] + r * cell;
-				g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, CELL, cx, cy, cell - 2, cell - 2);
+				g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, CELL, cx, cy, cell - 2, cell - 2);
 				boolean over = mouseX >= cx && mouseX < cx + cell - 2 && mouseY >= cy && mouseY < cy + cell - 2;
 				if (over) {
 					g.fill(cx + 1, cy + 1, cx + cell - 3, cy + cell - 3, 0x40FFE08A);
@@ -2375,17 +2383,17 @@ public class TablistEditorScreen extends Screen {
 				if (id.startsWith("custom/")) {
 					CustomIcons.Icon ci = CustomIcons.get(id.substring(7));
 					if (ci != null) {
-						g.blit(net.minecraft.client.renderer.RenderType::guiTextured, ci.texture(), cx + 1, cy + 1, 14, 14, 0, 0, ci.width(), ci.height(), ci.width(), ci.height());
+						g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, ci.texture(), cx + 1, cy + 1, 0, 0, 14, 14, ci.width(), ci.height(), ci.width(), ci.height());
 					}
 				} else {
 					Icons.Icon icon = Icons.icon(id);
 					if (icon != null) {
-						g.pose().pushPose();
-						g.pose().translate(cx + 1, cy + 1, 0);
-						g.pose().scale(2, 2, 1);
-						g.drawString(font, Component.literal(String.valueOf(icon.glyph()))
-								.withStyle(Style.EMPTY.withFont(Icons.FONT_COMPACT)), 0, 0, 0xFFEBC0, false);
-						g.pose().popPose();
+						g.pose().pushMatrix();
+						g.pose().translate(cx + 1, cy + 1);
+						g.pose().scale(2, 2);
+						g.text(font, Component.literal(String.valueOf(icon.glyph()))
+								.withStyle(Style.EMPTY.withFont(Icons.FONT_COMPACT)), 0, 0, 0xFFFFEBC0, false);
+						g.pose().popMatrix();
 					}
 				}
 			}
@@ -2393,14 +2401,14 @@ public class TablistEditorScreen extends Screen {
 		return hovered;
 	}
 
-	private void renderHelp(GuiGraphics g, int mouseX, int mouseY) {
+	private void renderHelp(GuiGraphicsExtractor g, int mouseX, int mouseY) {
 		int[] c = content();
 		drawLabel(g, new Label(c[0], c[1], () -> Lang.tr("screen.help_title"), LABEL, -(c[2] - 60)));
 		PopupRow hovered = renderRows(g, helpRows(), c[0], c[1] + 12, c[2], c[3] - 34, mouseX, mouseY, false);
 		if (hovered != null) {
 			int fy = c[1] + c[3] - 20;
-			g.drawString(font, font.plainSubstrByWidth(hovered.desc().getString(), c[2]), c[0], fy, LABEL, false);
-			g.drawString(font, font.plainSubstrByWidth(hovered.insert(), c[2]), c[0], fy + 10, HINT, false);
+			g.text(font, font.plainSubstrByWidth(hovered.desc().getString(), c[2]), c[0], fy, LABEL, false);
+			g.text(font, font.plainSubstrByWidth(hovered.insert(), c[2]), c[0], fy + 10, HINT, false);
 		}
 	}
 
@@ -2428,15 +2436,15 @@ public class TablistEditorScreen extends Screen {
 		return Map.of("player", "Steve");
 	}
 
-	private void renderPopup(GuiGraphics g, int mouseX, int mouseY) {
+	private void renderPopup(GuiGraphicsExtractor g, int mouseX, int mouseY) {
 		int[] r = popupRect();
-		g.pose().pushPose();
-		g.pose().translate(0, 0, 400);
-		g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, PANEL, r[0], r[1], r[2], r[3]);
+		g.pose().pushMatrix();
+		g.pose().translate(0, 0);
+		g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, PANEL, r[0], r[1], r[2], r[3]);
 		Component title = popup == Popup.EFFECT_EDIT && editing != null
 				? Lang.tr("popup.effect_edit", Lang.tr("snippet." + editing.id()))
 				: iconPick != null ? Lang.tr("popup.icon_pick") : Lang.tr("popup." + popup.name().toLowerCase());
-		g.drawString(font, font.plainSubstrByWidth(title.getString(), r[2] - 70), r[0] + 7, r[1] + 6, LABEL, false);
+		g.text(font, font.plainSubstrByWidth(title.getString(), r[2] - 70), r[0] + 7, r[1] + 6, LABEL, false);
 		int x = r[0] + 7;
 		int y = r[1] + 17;
 		int w = r[2] - 14;
@@ -2446,7 +2454,7 @@ public class TablistEditorScreen extends Screen {
 			case ICON -> {
 				String hovered = renderIconGrid(g, new int[] {x, y, w, r[3] - 30}, mouseX, mouseY);
 				if (hovered != null) {
-					g.drawString(font, font.plainSubstrByWidth(hovered, w), x, footer + 12, HINT, false);
+					g.text(font, font.plainSubstrByWidth(hovered, w), x, footer + 12, HINT, false);
 				}
 			}
 			case EFFECT, DATA -> {
@@ -2455,33 +2463,33 @@ public class TablistEditorScreen extends Screen {
 				if (hovered != null) {
 					// Qué hace y lo que se va a insertar (o qué hace el ✎).
 					Component desc = hoverEdit ? Lang.tr("screen.edit_effect_hint") : hovered.desc();
-					g.drawString(font, font.plainSubstrByWidth(desc.getString(), w), x, footer + 1, LABEL, false);
-					g.drawString(font, font.plainSubstrByWidth(hovered.insert(), w), x, footer + 12, HINT, false);
+					g.text(font, font.plainSubstrByWidth(desc.getString(), w), x, footer + 1, LABEL, false);
+					g.text(font, font.plainSubstrByWidth(hovered.insert(), w), x, footer + 12, HINT, false);
 				} else {
-					g.drawString(font, font.plainSubstrByWidth(Lang.tr("screen.popup_hint").getString(), w), x, footer + 6, HINT, false);
+					g.text(font, font.plainSubstrByWidth(Lang.tr("screen.popup_hint").getString(), w), x, footer + 6, HINT, false);
 				}
 			}
 			case EFFECT_EDIT -> renderEffectEditor(g, r, mouseX, mouseY);
 			default -> {}
 		}
-		g.pose().popPose();
+		g.pose().popMatrix();
 		if (popup == Popup.COLOR && hexBox != null && hexOk != null && hexPreview != null) {
-			g.pose().pushPose();
-			g.pose().translate(0, 0, 450);
-			g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, INSET, hexBox.getX() - 4, hexBox.getY() - 4, hexBox.getWidth() + 8, FH);
-			hexBox.render(g, mouseX, mouseY, 0);
-			hexPreview.render(g, mouseX, mouseY, 0);
-			hexOk.render(g, mouseX, mouseY, 0);
+			g.pose().pushMatrix();
+			g.pose().translate(0, 0);
+			g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, INSET, hexBox.getX() - 4, hexBox.getY() - 4, hexBox.getWidth() + 8, FH);
+			hexBox.extractRenderState(g, mouseX, mouseY, 0);
+			hexPreview.extractRenderState(g, mouseX, mouseY, 0);
+			hexOk.extractRenderState(g, mouseX, mouseY, 0);
 			if (colorPreviewing) {
 				// Marca de que lo que se ve en la vista previa aún no está aceptado.
 				g.fill(hexPreview.getX(), hexPreview.getY() + FH, hexPreview.getX() + hexPreview.getWidth(), hexPreview.getY() + FH + 1,
 						0xFF55FF55);
 			}
-			g.pose().popPose();
+			g.pose().popMatrix();
 		}
 	}
 
-	private void renderColorPicker(GuiGraphics g, int[] r, int mouseX, int mouseY) {
+	private void renderColorPicker(GuiGraphicsExtractor g, int[] r, int mouseX, int mouseY) {
 		int x = r[0] + 7;
 		int y = r[1] + 17;
 		int cols = swatchCols();
@@ -2508,12 +2516,12 @@ public class TablistEditorScreen extends Screen {
 		}
 		if (maxScroll > 0) {
 			String s = "▲▼";
-			g.drawString(font, s, r[0] + r[2] - 7 - font.width(s), r[1] + 6, HINT, false);
+			g.text(font, s, r[0] + r[2] - 7 - font.width(s), r[1] + 6, HINT, false);
 		}
 
 		// Transparencia: de transparente (izquierda) a opaco (derecha), sobre cuadros.
 		int[] sl = alphaSlider();
-		g.drawString(font, Lang.tr("screen.opacity"), x, sl[1] + 1, LABEL, false);
+		g.text(font, Lang.tr("screen.opacity"), x, sl[1] + 1, LABEL, false);
 		g.fill(sl[0] - 1, sl[1] - 1, sl[0] + sl[2] + 1, sl[1] + sl[3] + 1, INK);
 		checkerRect(g, sl[0], sl[1], sl[2], sl[3]);
 		for (int i = 0; i < sl[2]; i++) {
@@ -2524,7 +2532,7 @@ public class TablistEditorScreen extends Screen {
 		g.fill(knob - 1, sl[1] - 2, knob + 2, sl[1] + sl[3] + 2, 0xFFFFFFFF);
 		g.fill(knob, sl[1] - 1, knob + 1, sl[1] + sl[3] + 1, 0xFF000000);
 		String pct = Math.round(pickAlpha / 2.55f) + "%";
-		g.drawString(font, pct, r[0] + r[2] - 7 - font.width(pct), sl[1] + 1, 0xFFFFFF, false);
+		g.text(font, pct, r[0] + r[2] - 7 - font.width(pct), sl[1] + 1, 0xFFFFFFFF, false);
 
 		// Muestra grande del color con su transparencia.
 		int sy = r[1] + r[3] - 21;
@@ -2533,11 +2541,11 @@ public class TablistEditorScreen extends Screen {
 		g.fill(x, sy, x + 30, sy + FH, pickAlpha << 24 | pickRgb);
 		if (hovered != null) {
 			Component name = hovered.name().copy().append(String.format("  #%06X", hovered.rgb()));
-			g.drawString(font, font.plainSubstrByWidth(name.getString(), r[2] - 14), x, r[1] + 6, HINT, false);
+			g.text(font, font.plainSubstrByWidth(name.getString(), r[2] - 14), x, r[1] + 6, HINT, false);
 		}
 	}
 
-	private static void checkerRect(GuiGraphics g, int x, int y, int w, int h) {
+	private static void checkerRect(GuiGraphicsExtractor g, int x, int y, int w, int h) {
 		for (int i = 0; i < w; i += 4) {
 			for (int j = 0; j < h; j += 4) {
 				g.fill(x + i, y + j, x + Math.min(w, i + 4), y + Math.min(h, j + 4),
@@ -2546,7 +2554,7 @@ public class TablistEditorScreen extends Screen {
 		}
 	}
 
-	private static void checker(GuiGraphics g, int x, int y, int size) {
+	private static void checker(GuiGraphicsExtractor g, int x, int y, int size) {
 		for (int i = 0; i < size; i += 4) {
 			for (int j = 0; j < size; j += 4) {
 				g.fill(x + i, y + j, x + Math.min(size, i + 4), y + Math.min(size, j + 4),
@@ -2634,6 +2642,25 @@ public class TablistEditorScreen extends Screen {
     public void reloadForTest() { reloadServerVersion(); }
 
 	public boolean confirmedForTest() { return saves.pending() == null && saves.error().isEmpty() && !dirty; }
+
+    public void inputForTest() {
+        showTab(0);
+        var nextTab = children().stream().filter(w -> w instanceof GoldButton b && b.active && b.visible && b.getY() == 22).map(w -> (GoldButton)w).findFirst().orElseThrow();
+        var click = new net.minecraft.client.input.MouseButtonEvent(nextTab.getX() + 3, nextTab.getY() + 3, new net.minecraft.client.input.MouseButtonInfo(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 0));
+        if (!mouseClicked(click, false)) throw new IllegalStateException("Tab click was ignored");
+        mouseReleased(click);
+        if (tab == Tab.GENERAL) throw new IllegalStateException("Tab click did not select a new tab");
+        showTab(0);
+        var field = children().stream().filter(w -> w instanceof EditBox).map(w -> (EditBox)w).findFirst().orElseThrow();
+        setFocused(field);
+        String previous = field.getValue();
+        if (!keyPressed(new net.minecraft.client.input.KeyEvent(org.lwjgl.glfw.GLFW.GLFW_KEY_A, 0, com.mojang.blaze3d.platform.InputConstants.MOD_CONTROL))) throw new IllegalStateException("Ctrl+A ignored");
+        if (!field.getHighlighted().equals(previous)) throw new IllegalStateException("Ctrl+A selection mismatch");
+        if (!charTyped(new net.minecraft.client.input.CharacterEvent('ñ'))) throw new IllegalStateException("Unicode input ignored");
+        if (!field.getValue().equals("ñ")) throw new IllegalStateException("Unicode input mismatch");
+        field.setValue(previous);
+        setFocused(null);
+    }
 
 	public void saveForTest() {
 		save();

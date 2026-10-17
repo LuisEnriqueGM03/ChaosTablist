@@ -56,7 +56,7 @@ public final class TabTicker {
 	}
 
 	public static void join(ServerPlayer player) {
-		ServerValues.update(player.server, TabStore.config());
+		ServerValues.update(player.level().getServer(), TabStore.config());
 		// -Dchaostablist.forceVanilla=true: tratar a todos como clientes sin mod (para probar lo que ven).
 		if (Services.PLATFORM.canSend(player, TabPayloads.SyncConfig.TYPE)
                 && Services.PLATFORM.canSend(player, TabPayloads.SyncValues.TYPE)
@@ -67,7 +67,7 @@ public final class TabTicker {
 			TabServer.sendConfig(player);
 		}
 		// Valores al momento: así el que entra ya tiene su rango y sus datos en el primer frame.
-		broadcastValues(player.server);
+		broadcastValues(player.level().getServer());
 	}
 
 	public static void leave(ServerPlayer player) {

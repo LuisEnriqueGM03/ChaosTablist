@@ -1,1 +1,1 @@
-{"pack":{"description":"Chaos Tablist resources","pack_format":46}}
+{"pack": {"description": "Chaos Tablist", "min_format": [84, 0], "max_format": [101, 1]}}

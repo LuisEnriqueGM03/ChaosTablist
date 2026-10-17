@@ -14,19 +14,18 @@ import com.chaos.tablist.config.TabConfig;
 import com.chaos.tablist.text.ColorUtil;
 import com.chaos.tablist.text.Evaluator;
 import com.chaos.tablist.text.Glyph;
-import com.mojang.blaze3d.systems.RenderSystem;
 
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.PlayerFaceExtractor;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.numbers.StyledFormat;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.PlayerModelPart;
@@ -49,13 +48,13 @@ public final class TabRenderer {
 	public record Entry(UUID id, String name, PlayerSkin skin, GameType mode, int latency, Map<String, String> values,
 			boolean self, @Nullable PlayerInfo info) {}
 
-	private static final ResourceLocation[] PING = {
-			ResourceLocation.withDefaultNamespace("icon/ping_unknown"),
-			ResourceLocation.withDefaultNamespace("icon/ping_1"),
-			ResourceLocation.withDefaultNamespace("icon/ping_2"),
-			ResourceLocation.withDefaultNamespace("icon/ping_3"),
-			ResourceLocation.withDefaultNamespace("icon/ping_4"),
-			ResourceLocation.withDefaultNamespace("icon/ping_5")};
+	private static final Identifier[] PING = {
+			Identifier.withDefaultNamespace("icon/ping_unknown"),
+			Identifier.withDefaultNamespace("icon/ping_1"),
+			Identifier.withDefaultNamespace("icon/ping_2"),
+			Identifier.withDefaultNamespace("icon/ping_3"),
+			Identifier.withDefaultNamespace("icon/ping_4"),
+			Identifier.withDefaultNamespace("icon/ping_5")};
 
 	public static final int MAX_FAKES = 20;
 	private static final String[] FAKE_NAMES = {"Steve", "Alex", "Notch", "Herobrine", "Jeb_", "Dinnerbone", "Grumm",
@@ -85,7 +84,7 @@ public final class TabRenderer {
 	// HUD
 
 	/** Llamado en lugar del Tab vanilla. false = no hay configuración del servidor (se pinta el vanilla). */
-	public static boolean renderHud(Minecraft mc, GuiGraphics g) {
+	public static boolean renderHud(Minecraft mc, GuiGraphicsExtractor g) {
 		TabConfig cfg = ClientState.config();
 		if (cfg == null || !cfg.enabled || mc.level == null || mc.player == null || mc.getConnection() == null) {
 			return false;
@@ -114,7 +113,7 @@ public final class TabRenderer {
 			return true;
 		}
         try {
-            render(g, mc.font, cfg, entries(mc, cfg), ClientState.global(), g.guiWidth() / 2, cfg.layout.topMargin,
+            extractRenderState(g, mc.font, cfg, entries(mc, cfg), ClientState.global(), g.guiWidth() / 2, cfg.layout.topMargin,
                 g.guiWidth() - 20, g.guiHeight() - cfg.layout.topMargin - 10, objective, board, ClientContext.now(),
                 openedAt, progress, false);
         } catch (RuntimeException exception) {
@@ -135,15 +134,15 @@ public final class TabRenderer {
         List<Entry> list = new ArrayList<>();
 		UUID self = mc.player == null ? null : mc.player.getUUID();
 		for (PlayerInfo info : mc.getConnection().getListedOnlinePlayers()) {
-			UUID id = info.getProfile().getId();
+			UUID id = info.getProfile().id();
 			if (cfg.hidden(id.toString())) {
 				continue;
 			}
 			Map<String, String> values = new HashMap<>(ClientState.player(id));
-			values.putIfAbsent("player", info.getProfile().getName());
+			values.putIfAbsent("player", info.getProfile().name());
 			values.put("ping", String.valueOf(info.getLatency()));
 			values.putIfAbsent("gamemode", info.getGameMode().getName());
-			list.add(new Entry(id, info.getProfile().getName(), info.getSkin(), info.getGameMode(), info.getLatency(),
+			list.add(new Entry(id, info.getProfile().name(), info.getSkin(), info.getGameMode(), info.getLatency(),
 					values, id.equals(self), info));
 		}
 		if (testFakes > 0) {
@@ -170,11 +169,11 @@ public final class TabRenderer {
         if (mc.getConnection() == null) return List.of();
         List<Entry> result = new ArrayList<>();
         for (PlayerInfo info : mc.getConnection().getListedOnlinePlayers()) {
-            UUID id = info.getProfile().getId();
+            UUID id = info.getProfile().id();
             Map<String, String> values = new HashMap<>(ClientState.player(id));
-            values.putIfAbsent("player", info.getProfile().getName());
+            values.putIfAbsent("player", info.getProfile().name());
             values.put("ping", String.valueOf(info.getLatency()));
-            result.add(new Entry(id, info.getProfile().getName(), info.getSkin(), info.getGameMode(), info.getLatency(), values,
+            result.add(new Entry(id, info.getProfile().name(), info.getSkin(), info.getGameMode(), info.getLatency(), values,
                 mc.player != null && id.equals(mc.player.getUUID()), info));
         }
         result.sort(vanillaComparator());
@@ -244,7 +243,7 @@ public final class TabRenderer {
 	 * @param progress 0..1 de la animación de apertura
 	 * @param vanillaLook simular lo que ve un cliente sin el mod (vista previa del editor)
 	 */
-	public static void render(GuiGraphics g, Font font, TabConfig cfg, List<Entry> entries, Map<String, String> global,
+	public static void extractRenderState(GuiGraphicsExtractor g, Font font, TabConfig cfg, List<Entry> entries, Map<String, String> global,
 			int centerX, int top, int maxWidth, int maxHeight, @Nullable Objective objective, @Nullable Scoreboard board, double time,
 			double openedAt, float progress, boolean vanillaLook) {
 		if (vanillaLook) {
@@ -367,14 +366,13 @@ public final class TabRenderer {
 			scale = maxHeight / (float) height;
 		}
 
-		g.pose().pushPose();
+		g.pose().pushMatrix();
 		try {
-        g.pose().translate(centerX, top + offsetY, 0);
-		g.pose().scale(scale, scale, 1);
+        g.pose().translate(centerX, top + offsetY);
+		g.pose().scale(scale, scale);
 		int x0 = -width / 2;
 		int x1 = x0 + width;
 
-		RenderSystem.enableBlend();
 		panel(g, cfg, x0, 0, x1, height, alpha, time);
 
 		int y = pad;
@@ -408,16 +406,14 @@ public final class TabRenderer {
 			int ty = ry + (l.rowHeight - 8 + 1) / 2;
 			int cx = rx + 1;
 			if (heads) {
-				RenderSystem.setShaderColor(1, 1, 1, alpha * (row.entry().mode() == GameType.SPECTATOR ? l.spectatorAlpha : 1));
 				boolean hat = true;
 				boolean upsideDown = false;
 				if (mc.level != null) {
 					Player player = mc.level.getPlayerByUUID(row.entry().id());
 					hat = player == null || player.isModelPartShown(PlayerModelPart.HAT);
-					upsideDown = player != null && net.minecraft.client.renderer.entity.LivingEntityRenderer.isEntityUpsideDown(player);
+					upsideDown = player != null && ((net.minecraft.client.renderer.entity.LivingEntityRenderer)Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(player)).isEntityUpsideDown(player);
 				}
-				PlayerFaceRenderer.draw(g, row.entry().skin().texture(), cx, ty, 8, hat, upsideDown, RichText.scaleAlpha(0xFFFFFFFF, alpha * (row.entry().mode() == GameType.SPECTATOR ? l.spectatorAlpha : 1)));
-				RenderSystem.setShaderColor(1, 1, 1, 1);
+				PlayerFaceExtractor.extractRenderState(g, row.entry().skin().body().texturePath(), cx, ty, 8, hat, upsideDown, RichText.scaleAlpha(0xFFFFFFFF, alpha * (row.entry().mode() == GameType.SPECTATOR ? l.spectatorAlpha : 1)));
 				cx += 10;
 			}
 			RichText.draw(g, font, row.name(), cx, ty, alpha, l.textShadow);
@@ -425,12 +421,10 @@ public final class TabRenderer {
 			int right = rx + colW - 2;
 			if (row.pingWidth() > 0) {
 				if (bars) {
-					g.pose().pushPose();
-					g.pose().translate(0, 0, 100);
-					RenderSystem.setShaderColor(1, 1, 1, alpha);
-					g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, pingSprite(row.entry().latency()), right - 10, ty, 10, 8);
-					RenderSystem.setShaderColor(1, 1, 1, 1);
-					g.pose().popPose();
+					g.pose().pushMatrix();
+					g.pose().translate(0, 0);
+					g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, pingSprite(row.entry().latency()), right - 10, ty, 10, 8, RichText.scaleAlpha(0xFFFFFFFF, alpha));
+					g.pose().popMatrix();
 				}
 				if (number) {
 					int w = RichText.width(font, row.ping());
@@ -439,7 +433,7 @@ public final class TabRenderer {
 				right -= pingMax + 6;
 			}
 			if (row.score() != null) {
-				g.drawString(font, row.score(), right - row.scoreWidth(), ty, RichText.scaleAlpha(0xFFFFFFFF, alpha), l.textShadow);
+				g.text(font, row.score(), right - row.scoreWidth(), ty, RichText.scaleAlpha(0xFFFFFFFF, alpha), l.textShadow);
 			}
 		}
 		y += listH;
@@ -451,8 +445,7 @@ public final class TabRenderer {
 			y += line.height();
 		}
         } finally {
-            g.pose().popPose();
-            RenderSystem.setShaderColor(1, 1, 1, 1);
+            g.pose().popMatrix();
         }
     }
 
@@ -484,7 +477,7 @@ public final class TabRenderer {
 		}
 	}
 
-	private static void drawLine(GuiGraphics g, Font font, Line line, int x, int width, int y, float alpha, boolean shadow) {
+	private static void drawLine(GuiGraphicsExtractor g, Font font, Line line, int x, int width, int y, float alpha, boolean shadow) {
 		int lx = switch (line.align()) {
 			case Evaluator.Line.LEFT -> x;
 			case Evaluator.Line.RIGHT -> x + width - line.width();
@@ -493,7 +486,7 @@ public final class TabRenderer {
 		RichText.draw(g, font, line.glyphs(), lx, y + line.height() - 9, alpha, shadow);
 	}
 
-	private static void panel(GuiGraphics g, TabConfig cfg, int x0, int y0, int x1, int y1, float alpha, double time) {
+	private static void panel(GuiGraphicsExtractor g, TabConfig cfg, int x0, int y0, int x1, int y1, float alpha, double time) {
 		TabConfig.Layout l = cfg.layout;
 		int top = RichText.scaleAlpha(ColorUtil.parse(l.panelColor, 0x80000000), alpha);
 		int bottom = RichText.scaleAlpha(ColorUtil.parse(l.panelColor2, ColorUtil.parse(l.panelColor, 0x80000000)), alpha);
@@ -610,7 +603,7 @@ public final class TabRenderer {
 		return vanillaCache;
 	}
 
-	private static ResourceLocation pingSprite(int latency) {
+	private static Identifier pingSprite(int latency) {
 		if (latency < 0) {
 			return PING[0];
 		}

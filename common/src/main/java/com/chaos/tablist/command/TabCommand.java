@@ -35,7 +35,7 @@ public final class TabCommand {
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("tablist")
-				.requires(source -> source.hasPermission(TabServer.PERMISSION))
+				.requires(source -> source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
 				.executes(ctx -> {
 					TabServer.open(ctx.getSource().getPlayerOrException());
 					return 1;

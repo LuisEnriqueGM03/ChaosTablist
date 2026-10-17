@@ -17,7 +17,7 @@ import net.minecraft.client.Screenshot;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 
@@ -50,7 +50,7 @@ public final class SelfTest {
     mc.createWorldOpenFlows().openWorld("selftest", () -> mc.setScreen(new net.minecraft.client.gui.screens.TitleScreen()));
    } else {
     mc.createWorldOpenFlows().createFreshLevel("selftest",
-     new net.minecraft.world.level.LevelSettings("ChaosTablist selftest", net.minecraft.world.level.GameType.CREATIVE, false, net.minecraft.world.Difficulty.PEACEFUL, true, new GameRules(net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS), net.minecraft.world.level.WorldDataConfiguration.DEFAULT),
+     new net.minecraft.world.level.LevelSettings("ChaosTablist selftest", net.minecraft.world.level.GameType.CREATIVE, new net.minecraft.world.level.LevelSettings.DifficultySettings(net.minecraft.world.Difficulty.PEACEFUL, false, false), true, net.minecraft.world.level.WorldDataConfiguration.DEFAULT),
      new net.minecraft.world.level.levelgen.WorldOptions(83L,false,false),
      registries -> registries.lookupOrThrow(net.minecraft.core.registries.Registries.WORLD_PRESET).getOrThrow(net.minecraft.world.level.levelgen.presets.WorldPresets.FLAT).value().createWorldDimensions(), new net.minecraft.client.gui.screens.TitleScreen());
    }
@@ -68,10 +68,20 @@ public final class SelfTest {
 		switch (ticks) {
 			case 20 -> server.execute(() -> {
 				ServerPlayer p = player(server);
-				server.getPlayerList().op(p.getGameProfile());
-				p.serverLevel().getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, server);
-				p.serverLevel().setDayTime(6000);
-				TabServer.apply(server, new TabConfig());
+				server.getPlayerList().op(p.nameAndId());
+				p.level().getGameRules().set(GameRules.ADVANCE_TIME, false, server);
+				((net.minecraft.world.clock.ServerClockManager)p.level().clockManager()).setTotalTicks(p.level().dimensionType().defaultClock().orElseThrow(), 6000L);
+				TabConfig visualConfig = new TabConfig();
+                if (!Boolean.getBoolean("chaostablist.forceVanilla")) {
+                    visualConfig.footer.add("<head:{player}> <item:minecraft:diamond> <icon:custom/selftest_logo> <alpha:0.4><icon:custom/selftest_logo></alpha>");
+                }
+                TabServer.apply(server, visualConfig);
+                if (!Boolean.getBoolean("chaostablist.forceVanilla")) {
+                    try (var png = SelfTest.class.getResourceAsStream("/assets/chaostablist/icon.png")) {
+                        if (png == null) throw new IllegalStateException("Missing test PNG");
+                        com.chaos.tablist.platform.Services.PLATFORM.send(p, new com.chaos.tablist.net.TabPayloads.IconData("selftest_logo", png.readAllBytes()));
+                    } catch (java.io.IOException exception) { throw new IllegalStateException(exception); }
+                }
 				if (Boolean.getBoolean("chaostablist.forceVanilla")) {
 					// El Tab vanilla no sale con un solo jugador si no hay un marcador en la lista.
 					var board = server.getScoreboard();
@@ -91,6 +101,7 @@ public final class SelfTest {
 			case 55 -> {
                 if (!Boolean.getBoolean("chaostablist.forceVanilla") && waitFor(ClientState.player(mc.player.getUUID()).containsKey("x"),
                     "Private player values", "waiting for server")) return;
+                if (!Boolean.getBoolean("chaostablist.forceVanilla") && waitFor(CustomIcons.get("selftest_logo") != null, "Custom PNG payload", "waiting for icon texture")) return;
                 shot(mc, "tab");
             }
 			case 70 -> shot(mc, "tab_later");
@@ -106,6 +117,8 @@ public final class SelfTest {
 			}
 			case 100 -> {
                 if (waitFor(mc.screen instanceof TablistEditorScreen, "Editor open", mc.screen == null ? "no screen" : mc.screen.getClass().getSimpleName())) return;
+                editor(mc, TablistEditorScreen::inputForTest);
+                ChaosTablist.LOGGER.info("[selftest] PASS: mouse tab selection, Ctrl+A and Unicode input");
                 shot(mc, "editor_general");
             }
 			default -> {
@@ -244,7 +257,7 @@ public final class SelfTest {
 
     private static boolean waitFor(boolean ready, String step, String detail) {
         if (ready) { waitingSince = 0; return false; }
-        long now = net.minecraft.Util.getMillis();
+        long now = net.minecraft.util.Util.getMillis();
         if (waitingSince == 0) waitingSince = now;
         if (now - waitingSince > 15000) throw new IllegalStateException("[selftest] " + step + " timed out: " + detail);
         ticks--;
@@ -285,7 +298,7 @@ public final class SelfTest {
 	}
 
 	private static void shot(Minecraft mc, String name) {
-		Screenshot.grab(mc.gameDirectory, "selftest_" + name + ".png", mc.getMainRenderTarget(),
+		Screenshot.grab(mc.gameDirectory, "selftest_" + name + ".png", mc.getMainRenderTarget(), 1,
 				msg -> ChaosTablist.LOGGER.info("[selftest] {}", msg.getString()));
 	}
 }

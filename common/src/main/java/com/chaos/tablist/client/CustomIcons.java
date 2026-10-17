@@ -12,12 +12,12 @@ import com.mojang.blaze3d.platform.NativeImage;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** Iconos PNG que manda el servidor (&lt;mundo&gt;/chaostablist/icons), como texturas para &lt;icon:custom/nombre&gt;. */
 public final class CustomIcons {
 
-	public record Icon(ResourceLocation texture, int width, int height) {}
+	public record Icon(Identifier texture, int width, int height) {}
 
 	private static final Map<String, Icon> ICONS = new HashMap<>();
 
@@ -42,10 +42,10 @@ public final class CustomIcons {
                 throw new IllegalArgumentException("Invalid icon name or icon limit reached");
             PngLimits.validate(png);
             NativeImage image = NativeImage.read(png);
-			ResourceLocation id = ChaosTablist.id("custom_icon/" + name);
+			Identifier id = ChaosTablist.id("custom_icon/" + name);
 			int width = image.getWidth(), height = image.getHeight();
             DynamicTexture texture;
-            try { texture = new DynamicTexture(image); }
+            try { texture = new DynamicTexture(() -> "ChaosTablist icon", image); }
             catch (RuntimeException e) { image.close(); throw e; }
             try {
                 if (ICONS.containsKey(name)) Minecraft.getInstance().getTextureManager().release(id);

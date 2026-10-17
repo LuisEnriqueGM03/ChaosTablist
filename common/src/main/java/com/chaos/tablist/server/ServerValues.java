@@ -71,7 +71,7 @@ public final class ServerValues {
         Map<String, String> g = new HashMap<>();
 		g.put("server_name", config.serverName);
 		g.put("motd", server.getMotd());
-		g.put("version", SharedConstants.getCurrentVersion().getName());
+		g.put("version", SharedConstants.getCurrentVersion().name());
 		g.put("online", String.valueOf(server.getPlayerCount()));
 		g.put("max_players", String.valueOf(server.getMaxPlayers()));
 
@@ -94,7 +94,7 @@ public final class ServerValues {
 		g.put("uptime", duration(up));
 
 		ServerLevel overworld = server.overworld();
-		long dayTime = overworld.getDayTime();
+		long dayTime = overworld.getOverworldClockTime();
 		g.put("day", String.valueOf(dayTime / 24000));
 		long ticksOfDay = dayTime % 24000;
 		long hours = (ticksOfDay / 1000 + 6) % 24;
@@ -112,9 +112,9 @@ public final class ServerValues {
 		g.put("time", now.format(TIME));
 		g.put("chaosranks", String.valueOf(ChaosRanksCompat.present()));
 
-		g.put("is_day", String.valueOf(overworld.isDay()));
-		g.put("moon_phase", String.valueOf(overworld.getMoonPhase() + 1));
-		g.put("difficulty", overworld.getDifficulty().getKey());
+		g.put("is_day", String.valueOf(overworld.isBrightOutside()));
+		g.put("moon_phase", String.valueOf(overworld.environmentAttributes().getValue(net.minecraft.world.attribute.EnvironmentAttributes.MOON_PHASE, net.minecraft.world.phys.Vec3.atCenterOf(overworld.getRespawnData().pos()), null).ordinal() + 1));
+		g.put("difficulty", overworld.getDifficulty().getSerializedName());
 		g.put("view_distance", String.valueOf(server.getPlayerList().getViewDistance()));
 		g.put("sim_distance", String.valueOf(server.getPlayerList().getSimulationDistance()));
 		int entities = 0;
@@ -155,11 +155,11 @@ public final class ServerValues {
 		v.put("player", player.getScoreboardName());
 		v.put("uuid", player.getStringUUID());
 		v.put("ping", String.valueOf(player.connection.latency()));
-		ServerLevel level = player.serverLevel();
-		v.put("world", level.dimension().location().getPath());
-		v.put("dimension", level.dimension().location().toString());
+		ServerLevel level = player.level();
+		v.put("world", level.dimension().identifier().getPath());
+		v.put("dimension", level.dimension().identifier().toString());
 		v.put("biome", level.getBiome(player.blockPosition()).unwrapKey()
-				.map(k -> k.location().getPath()).orElse("unknown"));
+				.map(k -> k.identifier().getPath()).orElse("unknown"));
 		v.put("x", String.valueOf(player.getBlockX()));
 		v.put("y", String.valueOf(player.getBlockY()));
 		v.put("z", String.valueOf(player.getBlockZ()));
@@ -172,9 +172,9 @@ public final class ServerValues {
 		v.put("kills", String.valueOf(player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAYER_KILLS))));
 		v.put("mob_kills", String.valueOf(player.getStats().getValue(Stats.CUSTOM.get(Stats.MOB_KILLS))));
 		v.put("playtime", duration(player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME)) / 20L));
-		long idle = net.minecraft.Util.getMillis() - player.getLastActionTime();
+		long idle = net.minecraft.util.Util.getMillis() - player.getLastActionTime();
 		v.put("afk", String.valueOf(idle > 5 * 60 * 1000));
-		v.put("op", String.valueOf(server.getPlayerList().isOp(player.getGameProfile())));
+		v.put("op", String.valueOf(server.getPlayerList().isOp(player.nameAndId())));
 		PlayerTeam team = player.getTeam();
 		v.put("team", team == null ? "" : team.getName());
 		v.put("display_name", player.getDisplayName().getString());
@@ -191,8 +191,8 @@ public final class ServerValues {
 			case EAST -> "E";
 			default -> "W";
 		});
-		v.put("chunk_x", String.valueOf(player.chunkPosition().x));
-		v.put("chunk_z", String.valueOf(player.chunkPosition().z));
+		v.put("chunk_x", String.valueOf(player.chunkPosition().x()));
+		v.put("chunk_z", String.valueOf(player.chunkPosition().z()));
 		ItemStack held = player.getMainHandItem();
 		v.put("held_item", held.isEmpty() ? "" : held.getHoverName().getString());
 		v.put("language", player.clientInformation().language());
@@ -205,7 +205,7 @@ public final class ServerValues {
 
 		ChaosRanksCompat.Rank rank = ChaosRanksCompat.rankOf(player);
 		v.put("has_rank", String.valueOf(rank != null));
-		v.put("rank", rank == null ? "" : TextContext.JSON_MARK + Component.Serializer.toJson(rank.badge(), server.registryAccess()));
+		v.put("rank", rank == null ? "" : TextContext.JSON_MARK + net.minecraft.network.chat.ComponentSerialization.CODEC.encodeStart(server.registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE), rank.badge()).getOrThrow().toString());
 		v.put("rank_name", rank == null ? "" : rank.label());
 		v.put("rank_id", rank == null ? "" : rank.id());
 		v.put("rank_priority", String.valueOf(rank == null ? 0 : rank.priority()));

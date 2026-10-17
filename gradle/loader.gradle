@@ -1,7 +1,7 @@
 apply plugin: 'java-library'
 base.archivesName = "chaostablist-${project.name}-${minecraft_version}"
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
     withSourcesJar()
 }
 repositories { mavenCentral() }
@@ -13,7 +13,7 @@ sourceSets.test.java.srcDir '../common/src/test/java'
 sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
 sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
 dependencies { compileOnly 'org.jetbrains:annotations:24.1.0' }
-tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 21 }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 25 }
 processResources {
     def props = [version: project.version, minecraft_version: minecraft_version]
     inputs.properties(props)
@@ -32,5 +32,5 @@ tasks.named('test') {
     if (org.gradle.util.GradleVersion.current() >= org.gradle.util.GradleVersion.version('9.0')) failOnNoDiscoveredTests = false
 }
 tasks.withType(JavaExec).configureEach {
-    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
 }

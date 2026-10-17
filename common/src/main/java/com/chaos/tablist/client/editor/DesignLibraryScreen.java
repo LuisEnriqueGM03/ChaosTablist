@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import com.chaos.tablist.Lang;
 import com.chaos.tablist.config.TabConfig;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -39,20 +39,20 @@ final class DesignLibraryScreen extends Screen {
             y += 23;
         }
         addRenderableWidget(new GoldButton(x, height - 66, 35, 20, Component.literal("<"), b -> { page--; rebuildWidgets(); })).active = page > 0;
-        addRenderableWidget(new GoldButton(x + 40, height - 66, 220, 20, Lang.tr("button.design_folder"), b -> net.minecraft.Util.getPlatform().openFile(DesignLibrary.directory().toFile())));
+        addRenderableWidget(new GoldButton(x + 40, height - 66, 220, 20, Lang.tr("button.design_folder"), b -> net.minecraft.util.Util.getPlatform().openFile(DesignLibrary.directory().toFile())));
         addRenderableWidget(new GoldButton(x + 265, height - 66, 35, 20, Component.literal(">"), b -> { page++; rebuildWidgets(); })).active = (page + 1) * visible < files.size();
         addRenderableWidget(new GoldButton(x, height - 42, 300, 20, Lang.tr("button.close"), b -> onClose()));
     }
-    @Override public void renderBackground(GuiGraphics g, int mx, int my, float delta) {
-        renderTransparentBackground(g);
-        g.blitSprite(net.minecraft.client.renderer.RenderType::guiTextured, com.chaos.tablist.ChaosTablist.id("panel"), width / 2 - 160, 4, 320, height - 8);
+    @Override public void extractBackground(GuiGraphicsExtractor g, int mx, int my, float delta) {
+        extractTransparentBackground(g);
+        g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, com.chaos.tablist.ChaosTablist.id("panel"), width / 2 - 160, 4, 320, height - 8);
     }
     private void select(TabConfig config) { apply.accept(config); minecraft.setScreen(editor); }
     @Override public void onClose() { minecraft.setScreen(editor); }
-    @Override public void render(GuiGraphics g, int mx, int my, float delta) {
-        super.render(g, mx, my, delta);
-        g.drawCenteredString(font, title, width / 2, 14, 0xFFE8B23A);
-        if (!message.getString().isEmpty()) g.drawCenteredString(font, message, width / 2, height - 16, 0xFF5555);
+    @Override public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
+        super.extractRenderState(g, mx, my, delta);
+        g.centeredText(font, title, width / 2, 14, 0xFFE8B23A);
+        if (!message.getString().isEmpty()) g.centeredText(font, message, width / 2, height - 16, 0xFFFF5555);
     }
     @Override public boolean isPauseScreen() { return false; }
 }

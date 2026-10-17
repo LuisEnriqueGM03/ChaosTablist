@@ -10,7 +10,7 @@ import java.util.Map;
 import com.chaos.tablist.server.ServerValues;
 
 import com.chaos.tablist.platform.Services;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 
@@ -74,7 +74,7 @@ public final class ClientValues {
 	/** Nombre corto de la tarjeta gráfica (sin "/PCIe/SSE2" y demás). */
 	private static String gpu() {
 		if (gpu == null) {
-			String r = com.mojang.blaze3d.platform.GlUtil.getRenderer();
+			String r = com.mojang.blaze3d.systems.RenderSystem.getDevice().getRenderer();
 			int cut = r.indexOf('/');
 			gpu = (cut > 0 ? r.substring(0, cut) : r).trim();
 		}

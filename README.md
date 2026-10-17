@@ -1,6 +1,6 @@
 # Chaos Tablist
 
-Mod para Fabric, Forge y NeoForge (Minecraft 1.21.4) para personalizar el Tab al máximo: header y footer con varias líneas, rango de cada jugador con Chaos Ranks, ping, degradados, fade, arcoíris, animaciones por letra, fondos detrás del texto, iconos y badges en pixel art (como los de Chaos Ranks), datos del servidor (TPS, RAM, CPU…) y del cliente (FPS, RAM, hora). Todo se edita **en caliente** con `/tablist` desde un menú propio con vista previa en vivo, y queda guardado en el servidor.
+Mod para Fabric, Forge y NeoForge (Minecraft 26.1) para personalizar el Tab al máximo: header y footer con varias líneas, rango de cada jugador con Chaos Ranks, ping, degradados, fade, arcoíris, animaciones por letra, fondos detrás del texto, iconos y badges en pixel art (como los de Chaos Ranks), datos del servidor (TPS, RAM, CPU…) y del cliente (FPS, RAM, hora). Todo se edita **en caliente** con `/tablist` desde un menú propio con vista previa en vivo, y queda guardado en el servidor.
 
 Es **híbrido**:
 - **Solo en el servidor** ya funciona con clientes vanilla: el servidor monta el Tab y lo manda por los paquetes normales (header, footer y nombre de cada jugador), con las animaciones al ritmo de `updateTicks`.
@@ -9,17 +9,17 @@ Es **híbrido**:
 Lo que solo se ve con el mod (marcado con ★ en el editor) en vanilla simplemente no se aplica, sin romper el texto. Los iconos y badges salen como un símbolo de respaldo (`♛`, `★`, `[VIP]`…).
 
 
-## Fabric, Forge y NeoForge (1.21.4 · 1.2.0)
+## Fabric, Forge y NeoForge (26.1 · 1.2.0)
 
 El proyecto usa la misma separación que Chaos Ranks: `common/` contiene el editor, renderizado, configuración, texto, comandos y pruebas; `fabric/`, `forge/` y `neoforge/` contienen únicamente los eventos y la red nativa de cada cargador. No se necesita Architectury ni otra capa adicional al instalarlo.
 
 | Variante | Requisitos | JAR |
 |---|---|---|
-| Fabric | Java 21, Fabric Loader 0.16+ y Fabric API para 1.21.4 | `fabric/build/libs/chaostablist-fabric-1.21.4-1.2.0.jar` |
-| Forge | Java 21 y Forge 54.1.14+ de la serie 54 | `forge/build/libs/chaostablist-forge-1.21.4-1.2.0.jar` |
-| NeoForge | Java 21 y NeoForge 21.4.158+ de la serie 21.4 | `neoforge/build/libs/chaostablist-neoforge-1.21.4-1.2.0.jar` |
+| Fabric | Java 25, Fabric Loader 0.19.5+ y Fabric API para 26.1 | `fabric/build/libs/chaostablist-fabric-26.1-1.2.0.jar` |
+| Forge | Java 25 y Forge 62.0.9+ de la serie 62 | `forge/build/libs/chaostablist-forge-26.1-1.2.0.jar` |
+| NeoForge | Java 25 y NeoForge 26.1.0.19-beta para 26.1 | `neoforge/build/libs/chaostablist-neoforge-26.1-1.2.0.jar` |
 
-Los tres cargadores pasan las pruebas dentro del juego y la simulación vanilla. En el equipo de desarrollo Windows se usa `javaw.exe` con la preferencia existente de alto rendimiento; el arranque reproducible está en `tools/windows-gpu.init.gradle`. Consulta VALIDATION.md y GRAPHICS_RETEST_1.21.4.md.
+Los tres cargadores pasan las pruebas dentro del juego y la simulación vanilla. La validación dedicada es limitada: consulta VALIDATION.md. En el equipo de desarrollo Windows se usa `javaw.exe` con la preferencia existente de alto rendimiento; el arranque reproducible está en `tools/windows-gpu.init.gradle`. Consulta VALIDATION.md.
 
 Los tres JAR listos para instalar están también en `dist/`. Consulta [VALIDATION.md](VALIDATION.md) para ver los resultados y las limitaciones de las pruebas.
 
@@ -27,14 +27,14 @@ Usa el JAR de tu cargador. En Forge y NeoForge no se necesita Fabric API. Instal
 
 ### Compilar y probar
 
-- Fabric: `./gradlew -Ploader=fabric build` (Gradle 9.7.1, JVM 25 para Loom; compilador y juego Java 21).
-- Forge: `./gradlew-forge build` con `JAVA_HOME` en Java 21 (Gradle 8.12).
-- NeoForge: `./gradlew-neoforge build` con `JAVA_HOME` en Java 21 (Gradle 8.12).
+- Fabric: `./gradlew -Ploader=fabric build` (Gradle 9.7.1, Java 25).
+- Forge: `./gradlew-forge build` con `JAVA_HOME` en Java 25 (Gradle 9.7.1).
+- NeoForge: `./gradlew-neoforge build` con `JAVA_HOME` en Java 25 (Gradle 9.7.1).
 - Windows: los mismos comandos con extensión `.bat`.
 - Elige un cargador por ejecución. `build` ejecuta también las 82 comprobaciones de regresión.
-- Prueba visual: `./gradlew -Ploader=fabric :fabric:runSelftest` o `./gradlew-forge :forge:runSelftest`; NeoForge: `./gradlew-neoforge :neoforge:runSelftest`.
-- Simulación de clientes vanilla: cambiar la tarea a `runSelftestVanilla`.
-- Arranque dedicado sin aceptar EULA ni cargar un mundo: `:fabric:runServerSmoke` o `:forge:runServerSmoke` o `:neoforge:runServerSmoke`.
+- Prueba visual: `./gradlew -Ploader=fabric :fabric:runSelftest` o `./gradlew-forge -Pselftest :forge:runClient`; NeoForge: `./gradlew-neoforge :neoforge:runSelftest`.
+- Simulación de clientes vanilla: `runSelftestVanilla` en Fabric y NeoForge; Forge: `-PselftestVanilla :forge:runClient`.
+- Inicialización dedicada sin aceptar EULA ni cargar un mundo (NeoForge termina con código 1; ver VALIDATION.md): `:fabric:runServerSmoke`, `-PserverSmoke :forge:runServer` o `:neoforge:runServerSmoke`.
 
 Las autopruebas abren o crean el mundo después de llegar al menú inicial. Cada cargador usa su propio mundo de desarrollo en `<cargador>/run/saves/selftest`. Las autopruebas modifican exclusivamente ese mundo; no deben apuntar a un mundo de producción. Los generadores de recursos escriben en `common/src/main/resources`. Para publicar manualmente, las herramientas de `tools/` aceptan `-Loader fabric`, `-Loader forge` o `-Loader neoforge`; `-DryRun` no publica nada.
 
@@ -52,7 +52,7 @@ Las autopruebas abren o crean el mundo después de llegar al menú inicial. Cada
 
 Puedes ver la [biblioteca de diseños](screenshots/update-1.2.0/design_library.png), el [aviso de cambios pendientes](screenshots/update-1.2.0/unsaved_confirmation.png) y los [diagnósticos en el editor](screenshots/update-1.2.0/template_diagnostic.png) en las capturas de 1.2.0.
 
-**Compatibilidad de red:** para la vista personalizada y el editor, actualiza el servidor y los clientes a 1.2.0. Los clientes con una versión anterior siguen usando la vía vanilla. Minecraft sigue siendo 1.21.4 con Java 21.
+**Compatibilidad de red:** para la vista personalizada y el editor, actualiza el servidor y los clientes a 1.2.0. Los clientes con una versión anterior siguen usando la vía vanilla. Esta rama admite Minecraft 26.1 y requiere Java 25.
 
 **Pruebas:** `./gradlew build` ejecuta también `regressionTest`, que comprueba persistencia, privacidad, compresión, validación, historial, confirmación de guardado y presets sin abrir Minecraft. `runSelftest` y `runSelftestVanilla` añaden capturas y comprobación del guardado confirmado en un mundo de desarrollo.
 

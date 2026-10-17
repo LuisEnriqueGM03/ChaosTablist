@@ -27,7 +27,7 @@ public final class TabServer {
 
 
     public static void open(ServerPlayer player) {
-        if (!player.hasPermissions(PERMISSION)) return;
+        if (!player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER)) return;
         if (!Services.PLATFORM.canSend(player, TabPayloads.OpenEditor.TYPE)
                 || !Services.PLATFORM.canSend(player, TabPayloads.SaveResult.TYPE)) {
             player.sendSystemMessage(Lang.tr("msg.need_client").withStyle(ChatFormatting.RED));
@@ -42,8 +42,8 @@ public final class TabServer {
     }
 
     public static void save(ServerPlayer player, TabPayloads.SaveConfig payload) {
-        if (!player.hasPermissions(PERMISSION)) { result(player, payload, false, "permission"); return; }
-        long now = net.minecraft.Util.getMillis();
+        if (!player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER)) { result(player, payload, false, "permission"); return; }
+        long now = net.minecraft.util.Util.getMillis();
         Long last = LAST_SAVE.put(player.getUUID(), now);
         if (last != null && now - last < 500) { result(player, payload, false, "rate_limit"); return; }
         if (payload.revision() != TabStore.revision()) { result(player, payload, false, "conflict"); return; }
@@ -55,7 +55,7 @@ public final class TabServer {
             result(player, payload, false, "invalid");
             return;
         }
-        if (!apply(player.server, config)) { result(player, payload, false, "disk"); return; }
+        if (!apply(player.level().getServer(), config)) { result(player, payload, false, "disk"); return; }
         result(player, payload, true, "saved");
         ChaosTablist.LOGGER.info("{} guardó la configuración del Tab (revisión {})", player.getScoreboardName(), TabStore.revision());
     }
