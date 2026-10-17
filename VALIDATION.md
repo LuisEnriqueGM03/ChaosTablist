@@ -1,35 +1,41 @@
-# Chaos Tablist 1.2.0 — Minecraft 26.2
+# Chaos Tablist 1.2.0 — Minecraft 26.3
 
-17 de octubre de 2026. Java 25. Fabric Loader 0.19.5 y Fabric API 0.161.0+26.2; Forge 65.1.3; NeoForge 26.2.0.90.
+17 de octubre de 2026. Java 25. Fabric Loader 0.19.5 y Fabric API 0.162.0+26.3; Forge 66.0.10; NeoForge 26.3.0.76.
 
 | Comprobación | Fabric | Forge | NeoForge |
 |---|---|---|---|
 | Compilación y 85 regresiones | PASS | PASS | PASS |
 | Metadatos, bytecode Java 25, idiomas e iconos | PASS | PASS | PASS |
 | Tab, nueve pestañas y ventanas de efectos y colores | PASS | PASS | PASS |
-| Clic de pestaña, Ctrl+A y escritura Unicode | PASS | PASS | PASS |
+| Clic de pestaña y selección de texto al arrastrar | PASS | PASS | PASS |
+| Ctrl+A, Ctrl+Z, Ctrl+Y y escritura Unicode | PASS | PASS | PASS |
+| Escape y Enter en ventanas y edición de líneas | PASS | PASS | PASS |
 | PNG recibido por red, cabeza e ítem en el Tab | PASS | PASS | PASS |
-| Guardado confirmado y conflictos de revisión | PASS | PASS | PASS |
+| Guardado confirmado por Ctrl+S y conflictos | PASS | PASS | PASS |
 | Presets, biblioteca, cierre y diagnósticos | PASS | PASS | PASS |
 | Simulación vanilla y guardado confirmado | PASS | PASS | PASS |
 
-Las tres nuevas regresiones comprueban los valores RGB de los dieciséis colores de Minecraft, el código antiguo &6 con &r y los alias grey/dark_grey. Las 82 anteriores cubren persistencia, privacidad, límites, compresión, historial, guardado y diseños.
+Las 85 regresiones cubren persistencia, privacidad, límites, compresión, historial, guardado, diseños y compatibilidad de los dieciséis colores de Minecraft, códigos antiguos y alias.
 
-Se revisaron capturas reales de cada cargador en screenshots/26.2/. El Tab incluye un PNG recibido por red con opacidad normal y 0.4, una cabeza y un diamante. El editor muestra texto, controles y vista previa correctamente. Las capturas de la simulación vanilla llevan un prefijo distinto para conservar la evidencia de ambas rutas.
+Se revisaron capturas reales de cada cargador en screenshots/26.3/. El Tab incluye un PNG recibido por red con opacidad normal y 0.4, una cabeza y un diamante. El editor muestra texto, controles y vista previa. Las capturas de la simulación vanilla llevan un prefijo distinto para conservar ambas rutas.
 
-La adaptación usa Minecraft.gui para las pantallas y Minecraft.gui.hud para el Tab. El mixin se aplica a Hud.extractTabList. La captura usa GameRenderer.mainRenderTarget, la consulta de GPU usa DeviceInfo y los colores antiguos se resuelven con TextColor. NeoForge usa iconFile para evitar el aviso de logoFile obsoleto. El paquete declara recursos 88.0 y datos 107.1.
+## Cambios de 26.3
 
-En Windows se usó javaw.exe del mismo JDK 25 mediante tools/windows-gpu.init.gradle y la NVIDIA GeForce RTX 3060 Laptop GPU. No se cambiaron los ajustes del sistema. Los errores de JSON y escritura durante regressionTest son fallos provocados para comprobar que la configuración anterior se conserva. Los avisos del registro de contadores de Windows y de Realms no impidieron completar estas pruebas.
+El editor usa InputConstants para el teclado y el botón izquierdo, que en esta versión tiene identificador 1. Los atajos de letras usan la tecla traducida, igual que las operaciones de edición de Minecraft. La autoprueba hace clic, arrastra la selección, escribe ñ, deshace, rehace, restaura el texto, cierra una ventana con Escape y termina una edición de línea con Enter. Los guardados se disparan mediante Ctrl+S y esperan la confirmación real del servidor.
+
+La carpeta de diseños usa Blaze3D.openPath. El paquete declara recursos 97.1 y datos 121.0. Se conserva la separación de pantallas Gui/Hud, los PNG, los placeholders y los diseños de la versión anterior.
+
+En Windows se usó javaw.exe del mismo JDK 25 mediante tools/windows-gpu.init.gradle y la NVIDIA GeForce RTX 3060 Laptop GPU. No se cambiaron los ajustes del sistema. La ejecución final fue secuencial para reducir la carga de varios clientes abiertos. Los errores de JSON y escritura durante regressionTest son fallos provocados para comprobar que la configuración anterior se conserva. Los avisos del registro de contadores de Windows y de Realms no impidieron completar las pruebas finales.
 
 ## Alcance y límites
 
-Las pruebas dentro del juego usan cliente y servidor integrado con el transporte real de cada cargador. La simulación vanilla fuerza los paquetes y respaldos vanilla en un cliente con el mod; no equivale a conectar otro cliente vanilla independiente. No se hizo una sesión con dos clientes ni una partida en servidor dedicado para 26.2. No se probó la integración opcional con Chaos Ranks cargado.
+Las pruebas dentro del juego usan cliente y servidor integrado con el transporte real de cada cargador. La simulación vanilla fuerza los paquetes y respaldos vanilla en un cliente con el mod; no equivale a conectar otro cliente vanilla independiente. No se hizo una sesión con dos clientes ni una partida en servidor dedicado para 26.3. No se probó la integración opcional con Chaos Ranks cargado ni se automatizó la apertura del explorador de archivos.
 
-Forge incluye la marca Mixin JAVA_21 para su motor 0.8.7; el bytecode y la ejecución siguen siendo Java 25. Las variantes admiten Minecraft 26.2 y requieren el cargador correspondiente.
+Forge incluye la marca Mixin JAVA_21 para su motor 0.8.7; el bytecode y la ejecución siguen siendo Java 25. Las variantes admiten Minecraft 26.3 y requieren el cargador correspondiente.
 
 ## Reproducción
 
-Usar Java 25 y compilar un cargador por ejecución. En Windows usar los ejecutables .bat.
+Usar Java 25, compilar un cargador por ejecución y abrir un cliente de prueba a la vez. En Windows usar los ejecutables .bat.
 
 - Fabric: `./gradlew -Ploader=fabric :fabric:build :fabric:runSelftest :fabric:runSelftestVanilla`
 - Forge: `./gradlew-forge -Pselftest :forge:build :forge:runClient`; después `./gradlew-forge -PselftestVanilla :forge:runClient`

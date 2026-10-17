@@ -14,7 +14,7 @@ import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import com.chaos.tablist.ChaosTablist;
 import com.chaos.tablist.Lang;
@@ -1356,14 +1356,14 @@ public class TablistEditorScreen extends Screen {
 	@Override
 	public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         int key = event.key();
-        if (popup == Popup.NONE && event.hasControlDownWithQuirk() && key == GLFW.GLFW_KEY_S) { save(); return true; }
+        if (popup == Popup.NONE && event.hasControlDownWithQuirk() && event.shortcutKey() == 's') { save(); return true; }
 		if (popup == Popup.NONE && event.hasControlDownWithQuirk() && !event.hasAltDown()
-				&& (key == GLFW.GLFW_KEY_Z || key == GLFW.GLFW_KEY_Y)) {
+				&& (event.shortcutKey() == InputConstants.KEYCODE_Z || event.shortcutKey() == InputConstants.KEYCODE_Y)) {
 			// Ctrl+Z deshace, Ctrl+Y o Ctrl+Shift+Z rehace (en todo el editor).
-			undo(key == GLFW.GLFW_KEY_Y || event.hasShiftDown());
+			undo(event.shortcutKey() == InputConstants.KEYCODE_Y || event.hasShiftDown());
 			return true;
 		}
-		if (key == GLFW.GLFW_KEY_ESCAPE && popup != Popup.NONE) {
+		if (key == InputConstants.KEY_ESCAPE && popup != Popup.NONE) {
 			if (popup == Popup.EFFECT_EDIT) {
 				backToEffects();
 			} else {
@@ -1371,8 +1371,8 @@ public class TablistEditorScreen extends Screen {
 			}
 			return true;
 		}
-		boolean enter = key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER;
-		if (inlineBox != null && getFocused() == inlineBox && (enter || key == GLFW.GLFW_KEY_ESCAPE)) {
+		boolean enter = key == InputConstants.KEY_RETURN || key == InputConstants.KEY_NUMPADENTER;
+		if (inlineBox != null && getFocused() == inlineBox && (enter || key == InputConstants.KEY_ESCAPE)) {
 			inlineLine = -1;
 			rebuildWidgets();
 			return true;
@@ -1416,7 +1416,7 @@ public class TablistEditorScreen extends Screen {
 			}
 		}
 		if (super.mouseClicked(event, doubleClick)) {
-			if (button == 0 && getFocused() instanceof EditBox box && box.isMouseOver(mouseX, mouseY)) {
+			if (button == InputConstants.MOUSE_BUTTON_LEFT && getFocused() instanceof EditBox box && box.isMouseOver(mouseX, mouseY)) {
 				startTextDrag(box, mouseX);
 			}
 			return true;
@@ -1997,7 +1997,7 @@ public class TablistEditorScreen extends Screen {
 			setAlphaFrom(mouseX);
 			return true;
 		}
-		if (dragBox != null && button == 0) {
+		if (dragBox != null && button == InputConstants.MOUSE_BUTTON_LEFT) {
 			// Seleccionar arrastrando: el inicio se queda donde se hizo clic.
 			dragBox.moveCursorTo(textIndexAt(dragBox, mouseX), true);
 			return true;
@@ -2652,19 +2652,32 @@ public class TablistEditorScreen extends Screen {
         if (tab == Tab.GENERAL) throw new IllegalStateException("Tab click did not select a new tab");
         showTab(0);
         var field = children().stream().filter(w -> w instanceof EditBox).map(w -> (EditBox)w).findFirst().orElseThrow();
-        setFocused(field);
         String previous = field.getValue();
-        if (!keyPressed(new net.minecraft.client.input.KeyEvent(org.lwjgl.glfw.GLFW.GLFW_KEY_A, 0, com.mojang.blaze3d.platform.InputConstants.MOD_CONTROL))) throw new IllegalStateException("Ctrl+A ignored");
+        var fieldClick = new net.minecraft.client.input.MouseButtonEvent(field.getX() + 5, field.getY() + 5, new net.minecraft.client.input.MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
+        if (!mouseClicked(fieldClick, false)) throw new IllegalStateException("Text field click ignored");
+        var fieldDrag = new net.minecraft.client.input.MouseButtonEvent(field.getX() + field.getWidth() - 5, field.getY() + 5, fieldClick.buttonInfo());
+        if (!mouseDragged(fieldDrag, field.getWidth() - 10, 0) || field.getHighlighted().isEmpty()) throw new IllegalStateException("Text drag selection failed");
+        mouseReleased(fieldDrag);
+        if (!keyPressed(new net.minecraft.client.input.KeyEvent(InputConstants.KEY_A, InputConstants.KEYCODE_A, com.mojang.blaze3d.platform.InputConstants.MOD_CONTROL))) throw new IllegalStateException("Ctrl+A ignored");
         if (!field.getHighlighted().equals(previous)) throw new IllegalStateException("Ctrl+A selection mismatch");
         if (!charTyped(new net.minecraft.client.input.CharacterEvent('ñ'))) throw new IllegalStateException("Unicode input ignored");
         if (!field.getValue().equals("ñ")) throw new IllegalStateException("Unicode input mismatch");
-        field.setValue(previous);
+        if (!keyPressed(new net.minecraft.client.input.KeyEvent(InputConstants.KEY_Z, InputConstants.KEYCODE_Z, InputConstants.MOD_CONTROL)) || !draft.serverName.equals(previous)) throw new IllegalStateException("Ctrl+Z failed");
+        if (!keyPressed(new net.minecraft.client.input.KeyEvent(InputConstants.KEY_Y, InputConstants.KEYCODE_Y, InputConstants.MOD_CONTROL)) || !draft.serverName.equals("ñ")) throw new IllegalStateException("Ctrl+Y failed");
+        keyPressed(new net.minecraft.client.input.KeyEvent(InputConstants.KEY_Z, InputConstants.KEYCODE_Z, InputConstants.MOD_CONTROL));
+        if (!draft.serverName.equals(previous)) throw new IllegalStateException("Restoring input test failed");
+        openPopupForTest(1);
+        if (!keyPressed(new net.minecraft.client.input.KeyEvent(InputConstants.KEY_ESCAPE, 0, 0)) || popup != Popup.NONE) throw new IllegalStateException("Escape failed to close popup");
+        showTab(1);
+        inlineEditForTest(0);
+        if (!keyPressed(new net.minecraft.client.input.KeyEvent(InputConstants.KEY_RETURN, 0, 0)) || inlineBox != null) throw new IllegalStateException("Enter failed to finish inline editing");
+        showTab(0);
         setFocused(null);
     }
 
-	public void saveForTest() {
-		save();
-	}
+    public void saveForTest() {
+        if (!keyPressed(new net.minecraft.client.input.KeyEvent(InputConstants.KEY_S, 's', InputConstants.MOD_CONTROL))) throw new IllegalStateException("Ctrl+S ignored");
+    }
 
 	public void openPopupForTest(int index) {
 		openPopup(Popup.values()[index], null);

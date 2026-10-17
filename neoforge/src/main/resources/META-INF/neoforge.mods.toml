@@ -11,13 +11,13 @@ description='''Animated tab list, rich text, private placeholders, reusable desi
 [[dependencies.chaostablist]]
 modId="neoforge"
 type="required"
-versionRange="[26.2.0.90,26.2.1)"
+versionRange="[26.3.0.76,26.3.1)"
 ordering="NONE"
 side="BOTH"
 [[dependencies.chaostablist]]
 modId="minecraft"
 type="required"
-versionRange="[26.2,26.2.1)"
+versionRange="[26.3,26.3.1)"
 ordering="NONE"
 side="BOTH"
 

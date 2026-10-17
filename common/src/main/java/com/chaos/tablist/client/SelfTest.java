@@ -118,7 +118,7 @@ public final class SelfTest {
 			case 100 -> {
                 if (waitFor(mc.gui.screen() instanceof TablistEditorScreen, "Editor open", mc.gui.screen() == null ? "no screen" : mc.gui.screen().getClass().getSimpleName())) return;
                 editor(mc, TablistEditorScreen::inputForTest);
-                ChaosTablist.LOGGER.info("[selftest] PASS: mouse tab selection, Ctrl+A and Unicode input");
+                ChaosTablist.LOGGER.info("[selftest] PASS: mouse tabs, drag selection, Ctrl+A/Z/Y, Unicode, Escape and Enter");
                 shot(mc, "editor_general");
             }
 			default -> {

@@ -39,7 +39,7 @@ final class DesignLibraryScreen extends Screen {
             y += 23;
         }
         addRenderableWidget(new GoldButton(x, height - 66, 35, 20, Component.literal("<"), b -> { page--; rebuildWidgets(); })).active = page > 0;
-        addRenderableWidget(new GoldButton(x + 40, height - 66, 220, 20, Lang.tr("button.design_folder"), b -> net.minecraft.util.Util.getPlatform().openFile(DesignLibrary.directory().toFile())));
+        addRenderableWidget(new GoldButton(x + 40, height - 66, 220, 20, Lang.tr("button.design_folder"), b -> com.mojang.blaze3d.Blaze3D.openPath(DesignLibrary.directory())));
         addRenderableWidget(new GoldButton(x + 265, height - 66, 35, 20, Component.literal(">"), b -> { page++; rebuildWidgets(); })).active = (page + 1) * visible < files.size();
         addRenderableWidget(new GoldButton(x, height - 42, 300, 20, Lang.tr("button.close"), b -> onClose()));
     }
