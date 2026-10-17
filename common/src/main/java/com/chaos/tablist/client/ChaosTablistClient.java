@@ -23,15 +23,15 @@ public final class ChaosTablistClient {
             switch (payload) {
                 case TabPayloads.SyncConfig p -> {
                     ClientState.setConfig(p.data(), p.revision());
-                    if (mc.screen instanceof TablistEditorScreen editor)
+                    if (mc.gui.screen() instanceof TablistEditorScreen editor)
                         editor.serverConfigChanged(ClientState.config(), ClientState.revision());
                 }
                 case TabPayloads.SyncValues p -> ClientState.setValues(p.data());
                 case TabPayloads.SelfValues p -> ClientState.setSelfValues(p.data());
                 case TabPayloads.IconData p -> CustomIcons.accept(p.name(), p.png());
-                case TabPayloads.OpenEditor p -> mc.setScreen(new TablistEditorScreen(
+                case TabPayloads.OpenEditor p -> mc.gui.setScreen(new TablistEditorScreen(
                     TabConfig.fromJson(TabPayloads.gunzip(p.data())), p.chaosRanks(), p.revision()));
-                case TabPayloads.SaveResult p -> { if (mc.screen instanceof TablistEditorScreen editor) editor.saved(p); }
+                case TabPayloads.SaveResult p -> { if (mc.gui.screen() instanceof TablistEditorScreen editor) editor.saved(p); }
                 default -> throw new IllegalArgumentException("Unexpected client payload " + payload.type().id());
             }
         } catch (RuntimeException e) { ChaosTablist.LOGGER.error("Invalid Tablist client payload", e); }

@@ -11,11 +11,11 @@ import com.chaos.tablist.client.TabRenderer;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.Hud;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /** Si el servidor tiene Chaos Tablist, el Tab lo pinta TabRenderer en lugar del vanilla. */
-@Mixin(Gui.class)
+@Mixin(Hud.class)
 abstract class GuiMixin {
 
 	@Shadow

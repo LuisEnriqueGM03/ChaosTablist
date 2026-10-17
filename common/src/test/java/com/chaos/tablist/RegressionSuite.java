@@ -93,6 +93,14 @@ public final class RegressionSuite {
     }
 
     private static void text() {
+        String[] names = {"black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple", "gold", "gray", "dark_gray", "blue", "green", "aqua", "red", "light_purple", "yellow", "white"};
+        int[] colors = {0x000000, 0x0000AA, 0x00AA00, 0x00AAAA, 0xAA0000, 0xAA00AA, 0xFFAA00, 0xAAAAAA, 0x555555, 0x5555FF, 0x55FF55, 0x55FFFF, 0xFF5555, 0xFF55FF, 0xFFFF55, 0xFFFFFF};
+        boolean namedColors = true;
+        for (int i = 0; i < names.length; i++) namedColors &= java.util.Objects.equals(com.chaos.tablist.text.ColorUtil.parse(names[i]), 0xFF000000 | colors[i]);
+        check(namedColors, "All sixteen named Minecraft colors retain their RGB values");
+        var legacy = Evaluator.eval("&6A&rB", CONTEXT);
+        check(legacy.size() == 2 && legacy.get(0).color == 0xFFAA00 && legacy.get(1).color == com.chaos.tablist.text.Glyph.UNSET, "Legacy gold and reset survive the 26.2 formatting API");
+        check(java.util.Objects.equals(com.chaos.tablist.text.ColorUtil.parse("grey"), 0xFFAAAAAA) && java.util.Objects.equals(com.chaos.tablist.text.ColorUtil.parse("dark_grey"), 0xFF555555), "Gray aliases retain their colors");
         check(Evaluator.eval("<scroll:2:-1>abcdef</scroll>", CONTEXT).size() == 2, "Negative marquee speed is safe");
         check(Evaluator.eval("a".repeat(3072), CONTEXT).size() == 2048, "Long text obeys the glyph budget");
         check(Evaluator.eval("<bar:50:100>".repeat(24), CONTEXT).size() == 2048, "Bars share the glyph budget");

@@ -232,7 +232,7 @@ public final class Showcase {
 	// ---------------------------------------------------------------------------------------------
 
 	private static void editor(Minecraft mc, Consumer<TablistEditorScreen> action) {
-		if (mc.screen instanceof TablistEditorScreen e) {
+		if (mc.gui.screen() instanceof TablistEditorScreen e) {
 			action.accept(e);
 		}
 	}
@@ -259,6 +259,6 @@ public final class Showcase {
 	}
 
 	private static void shot(Minecraft mc, String name) {
-		Screenshot.grab(mc.gameDirectory, name + ".png", mc.getMainRenderTarget(), 1, msg -> {});
+		Screenshot.grab(mc.gameDirectory, name + ".png", mc.gameRenderer.mainRenderTarget(), 1, msg -> {});
 	}
 }

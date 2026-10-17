@@ -13,7 +13,7 @@ final class CloseDraftScreen extends Screen {
     }
     @Override protected void init() {
         int x = width / 2 - 100, y = height / 2;
-        addRenderableWidget(new GoldButton(x, y, 200, 20, Lang.tr("button.save_close"), b -> { minecraft.setScreen(editor); save.run(); }));
+        addRenderableWidget(new GoldButton(x, y, 200, 20, Lang.tr("button.save_close"), b -> { minecraft.gui.setScreen(editor); save.run(); }));
         addRenderableWidget(new GoldButton(x, y + 24, 200, 20, Lang.tr("button.discard_close"), b -> discard.run()));
         addRenderableWidget(new GoldButton(x, y + 48, 200, 20, Lang.tr("button.keep_editing"), b -> onClose()));
     }
@@ -21,7 +21,7 @@ final class CloseDraftScreen extends Screen {
         extractTransparentBackground(g);
         g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, com.chaos.tablist.ChaosTablist.id("panel"), width / 2 - 120, height / 2 - 50, 240, 135);
     }
-    @Override public void onClose() { minecraft.setScreen(editor); }
+    @Override public void onClose() { minecraft.gui.setScreen(editor); }
     @Override public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
         super.extractRenderState(g, mx, my, delta);
         g.centeredText(font, title, width / 2, height / 2 - 35, 0xFFE8B23A);

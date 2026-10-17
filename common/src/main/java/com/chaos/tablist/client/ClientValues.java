@@ -74,7 +74,7 @@ public final class ClientValues {
 	/** Nombre corto de la tarjeta gráfica (sin "/PCIe/SSE2" y demás). */
 	private static String gpu() {
 		if (gpu == null) {
-			String r = com.mojang.blaze3d.systems.RenderSystem.getDevice().getRenderer();
+			String r = com.mojang.blaze3d.systems.RenderSystem.getDevice().getDeviceInfo().name();
 			int cut = r.indexOf('/');
 			gpu = (cut > 0 ? r.substring(0, cut) : r).trim();
 		}

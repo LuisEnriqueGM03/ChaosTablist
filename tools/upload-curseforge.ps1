@@ -23,7 +23,7 @@ if ($Loader -eq "fabric") {
 }
 
 $version = ((Get-Content "$root\gradle.properties") | Where-Object { $_ -match '^version=' }) -replace '^version=', ''
-$jar = Get-ChildItem "$root\$Loader\build\libs" -Filter "chaostablist-$Loader-26.1-$version.jar" | Select-Object -First 1
+$jar = Get-ChildItem "$root\$Loader\build\libs" -Filter "chaostablist-$Loader-26.2-$version.jar" | Select-Object -First 1
 if (-not $jar) { throw "No existe el JAR de $Loader para $version; compila primero ese cargador" }
 
 if ($DryRun) {
@@ -36,9 +36,9 @@ if ($DryRun) {
 $api = "https://minecraft.curseforge.com/api"
 $all = Invoke-RestMethod -Uri "$api/game/versions" -Headers @{ "X-Api-Token" = $token }
 $loaderLabel = if ($Loader -eq "fabric") { "Fabric" } elseif ($Loader -eq "neoforge") { "NeoForge" } else { "Forge" }
-$wanted = "26.1", $loaderLabel, "Java 25", "Client", "Server"
+$wanted = "26.2", $loaderLabel, "Java 25", "Client", "Server"
 $ids = foreach ($name in $wanted) {
-	$match = @($all | Where-Object { $_.name -eq $name -and ($name -ne "26.1" -or $_.gameVersionTypeID -eq 83806) })
+	$match = @($all | Where-Object { $_.name -eq $name -and ($name -ne "26.2" -or $_.gameVersionTypeID -eq 86297) })
     if ($match.Count -ne 1) { throw "Etiqueta de CurseForge ambigua o ausente: $name" }
     $match = $match[0]
 	if (-not $match) { throw "CurseForge no tiene la versión '$name'" }
@@ -50,7 +50,7 @@ $metadata = @{
 	# ReadAllText: en PowerShell 5.1, Get-Content -Raw añade propiedades que ConvertTo-Json serializa.
 	changelog     = [IO.File]::ReadAllText("$root\tools\changelog.md", [Text.Encoding]::UTF8)
 	changelogType = "markdown"
-	displayName   = "Chaos Tablist $version - 26.1 ($loaderLabel)"
+	displayName   = "Chaos Tablist $version - 26.2 ($loaderLabel)"
 	gameVersions  = @($ids)
 	releaseType   = $ReleaseType
 }

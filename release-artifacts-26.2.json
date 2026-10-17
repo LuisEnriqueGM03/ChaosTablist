@@ -1,0 +1,43 @@
+{
+  "minecraft": "26.2",
+  "version": "1.2.0",
+  "java": 25,
+  "artifacts": [
+    {
+      "loader": "fabric",
+      "file": "chaostablist-fabric-26.2-1.2.0.jar",
+      "bytes": 391964,
+      "sha256": "5709c4fa54df4975af403f7d348439d251582094db5cdf833dcff3b389661b84"
+    },
+    {
+      "loader": "fabric",
+      "file": "chaostablist-fabric-26.2-1.2.0-sources.jar",
+      "bytes": 211337,
+      "sha256": "68766ee72db41fb254ceec3b663c79f432ae3bab8b3deb64acd7c15023d90ea2"
+    },
+    {
+      "loader": "forge",
+      "file": "chaostablist-forge-26.2-1.2.0.jar",
+      "bytes": 389835,
+      "sha256": "1baffdcaab751c48259820df3338b345add75ed5cc70aff3d75c0a43b7cf240d"
+    },
+    {
+      "loader": "forge",
+      "file": "chaostablist-forge-26.2-1.2.0-sources.jar",
+      "bytes": 211829,
+      "sha256": "c970d8c2563231f294d675bae5326ab129bc9215925bbd452cda694f6a9600be"
+    },
+    {
+      "loader": "neoforge",
+      "file": "chaostablist-neoforge-26.2-1.2.0.jar",
+      "bytes": 388910,
+      "sha256": "363b6146eb31e6ca7a8d50b765046dc66d1eb3da01437f2cbbe89dde8fce4381"
+    },
+    {
+      "loader": "neoforge",
+      "file": "chaostablist-neoforge-26.2-1.2.0-sources.jar",
+      "bytes": 211787,
+      "sha256": "38c0d96ba0225579d0b224a2eb3f06a8f6ec04eb3c1a386e0619c2116fe83319"
+    }
+  ]
+}

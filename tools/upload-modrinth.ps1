@@ -23,14 +23,14 @@ if ($Loader -eq "fabric") {
 }
 
 $version = ((Get-Content "$root\gradle.properties") | Where-Object { $_ -match '^version=' }) -replace '^version=', ''
-$jar = Get-ChildItem "$root\$Loader\build\libs" -Filter "chaostablist-$Loader-26.1-$version.jar" | Select-Object -First 1
+$jar = Get-ChildItem "$root\$Loader\build\libs" -Filter "chaostablist-$Loader-26.2-$version.jar" | Select-Object -First 1
 if (-not $jar) { throw "No existe el JAR de $Loader para $version; compila primero ese cargador" }
 
 $data = @{
 	name           = "Chaos Tablist $version ($loaderLabel)"
 	version_number = "$version-$Loader"
 	changelog      = [IO.File]::ReadAllText("$root\tools\changelog.md", [Text.Encoding]::UTF8)
-	game_versions  = @("26.1")
+	game_versions  = @("26.2")
 	loaders        = @($Loader)
 	version_type   = $ReleaseType
 	featured       = $true

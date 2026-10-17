@@ -16,8 +16,9 @@ public final class ColorUtil {
 
 	static {
 		for (ChatFormatting f : ChatFormatting.values()) {
-			if (f.isColor() && f.getColor() != null) {
-				NAMES.put(f.getName(), 0xFF000000 | f.getColor());
+			net.minecraft.network.chat.TextColor color = net.minecraft.network.chat.TextColor.fromLegacyFormat(f);
+            if (color != null) {
+				NAMES.put(f.name().toLowerCase(java.util.Locale.ROOT), 0xFF000000 | color.getValue());
 			}
 		}
 		NAMES.put("grey", NAMES.get("gray"));

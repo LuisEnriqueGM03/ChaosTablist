@@ -89,7 +89,7 @@ public final class TabRenderer {
 		if (cfg == null || !cfg.enabled || mc.level == null || mc.player == null || mc.getConnection() == null) {
 			return false;
 		}
-		PlayerTabOverlay overlay = mc.gui.getTabList();
+		PlayerTabOverlay overlay = mc.gui.hud.getTabList();
 		Scoreboard board = mc.level.getScoreboard();
 		Objective objective = board.getDisplayObjective(DisplaySlot.LIST);
 		boolean down = mc.options.keyPlayerList.isDown();
@@ -295,7 +295,7 @@ public final class TabRenderer {
 					score = Component.literal("❤ " + (hearts ? String.format(Locale.ROOT, "%.1f", value / 2f) : value))
 							.withColor(0xFF5555);
 				} else {
-					score = ReadOnlyScoreInfo.safeFormatValue(info, objective.numberFormatOrDefault(StyledFormat.PLAYER_LIST_DEFAULT));
+					score = info == null ? objective.numberFormatOrDefault(StyledFormat.PLAYER_LIST_DEFAULT).format(0) : info.formatValue(objective.numberFormatOrDefault(StyledFormat.PLAYER_LIST_DEFAULT));
 				}
 			}
 			List<Glyph> ping = number ? Evaluator.eval(cfg.ping.format, ctx) : List.of();

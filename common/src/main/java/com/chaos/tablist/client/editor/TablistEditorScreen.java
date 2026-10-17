@@ -625,7 +625,7 @@ public class TablistEditorScreen extends Screen {
             button(x, y, half, FH, Lang.tr("button.designs"), () -> {
                 if (saves.pending() != null) { status(Lang.tr("msg.saving")); return; }
                 try {
-                    minecraft.setScreen(new DesignLibraryScreen(this, draft.copy(), this::applyDesign));
+                    minecraft.gui.setScreen(new DesignLibraryScreen(this, draft.copy(), this::applyDesign));
                 } catch (RuntimeException e) { status(Lang.tr("msg.invalid")); }
             });
             button(x + half + 2, y, half, FH, Lang.tr("button.export_design"), () -> {
@@ -1288,7 +1288,7 @@ public class TablistEditorScreen extends Screen {
             dirty = !draft.toJson().equals(pendingDraftJson);
             if (!dirty) { draft = original.copy(); settleHistory(); TabRenderer.invalidate(); }
             status(Lang.tr("msg.saved").withColor(0xFF55FF55));
-            if (closeAfterSave && !dirty) { minecraft.setScreen(null); return; }
+            if (closeAfterSave && !dirty) { minecraft.gui.setScreen(null); return; }
         } else {
             autoApply = false;
             status(Lang.tr("msg.save_" + result.reason()).withColor(0xFFFF5555));
@@ -1330,7 +1330,7 @@ public class TablistEditorScreen extends Screen {
         closePopup();
         if (saves.pending() != null) { status(Lang.tr("msg.saving")); return; }
         if (!dirty) { super.onClose(); return; }
-        minecraft.setScreen(new CloseDraftScreen(this, () -> { closeAfterSave = true; save(); }, () -> minecraft.setScreen(null)));
+        minecraft.gui.setScreen(new CloseDraftScreen(this, () -> { closeAfterSave = true; save(); }, () -> minecraft.gui.setScreen(null)));
     }
 
 	private void status(Component text) {
@@ -2631,7 +2631,7 @@ public class TablistEditorScreen extends Screen {
 
 	/** Como pulsar "Guardar". */
     public void scrollAdvancedForTest() { showTab(0); rowsScroll = rowsMax; rebuildWidgets(); }
-    public void openDesignsForTest() { minecraft.setScreen(new DesignLibraryScreen(this, draft.copy(), this::applyDesign)); }
+    public void openDesignsForTest() { minecraft.gui.setScreen(new DesignLibraryScreen(this, draft.copy(), this::applyDesign)); }
     public void presetForTest(String id) { applyDesign(DesignLibrary.preset(id, draft)); rebuildWidgets(); }
     public void headerForTest(String text) { draft.header.set(0, text); changed(); }
     public boolean conflictForTest() { return remoteConflict && saves.error().equals("conflict") && dirty; }

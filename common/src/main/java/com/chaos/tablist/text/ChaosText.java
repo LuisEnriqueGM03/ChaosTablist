@@ -281,7 +281,7 @@ public final class ChaosText {
 				default -> {
 					closeLegacy();
 					net.minecraft.ChatFormatting f = net.minecraft.ChatFormatting.getByCode(code);
-					push("color", List.of(f != null ? f.getName() : "white"), true);
+					push("color", List.of(f != null ? f.name().toLowerCase(java.util.Locale.ROOT) : "white"), true);
 				}
 			}
 			return 2;

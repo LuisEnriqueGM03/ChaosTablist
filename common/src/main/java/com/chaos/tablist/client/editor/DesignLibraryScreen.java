@@ -47,8 +47,8 @@ final class DesignLibraryScreen extends Screen {
         extractTransparentBackground(g);
         g.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, com.chaos.tablist.ChaosTablist.id("panel"), width / 2 - 160, 4, 320, height - 8);
     }
-    private void select(TabConfig config) { apply.accept(config); minecraft.setScreen(editor); }
-    @Override public void onClose() { minecraft.setScreen(editor); }
+    private void select(TabConfig config) { apply.accept(config); minecraft.gui.setScreen(editor); }
+    @Override public void onClose() { minecraft.gui.setScreen(editor); }
     @Override public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
         super.extractRenderState(g, mx, my, delta);
         g.centeredText(font, title, width / 2, 14, 0xFFE8B23A);

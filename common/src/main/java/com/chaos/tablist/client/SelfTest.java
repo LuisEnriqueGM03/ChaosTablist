@@ -42,12 +42,12 @@ public final class SelfTest {
 
 
 	public static void tick(Minecraft mc) {
-  if (mc.screen instanceof net.minecraft.client.gui.screens.AccessibilityOnboardingScreen) mc.setScreen(new net.minecraft.client.gui.screens.TitleScreen());
+  if (mc.gui.screen() instanceof net.minecraft.client.gui.screens.AccessibilityOnboardingScreen) mc.gui.setScreen(new net.minecraft.client.gui.screens.TitleScreen());
   // Open the isolated test world after loader initialization, through the normal title-screen flow.
-  if (!openingWorld && mc.getSingleplayerServer() == null && mc.screen instanceof net.minecraft.client.gui.screens.TitleScreen) {
+  if (!openingWorld && mc.getSingleplayerServer() == null && mc.gui.screen() instanceof net.minecraft.client.gui.screens.TitleScreen) {
    openingWorld = true;
    if (java.nio.file.Files.exists(mc.gameDirectory.toPath().resolve("saves/selftest/level.dat"))) {
-    mc.createWorldOpenFlows().openWorld("selftest", () -> mc.setScreen(new net.minecraft.client.gui.screens.TitleScreen()));
+    mc.createWorldOpenFlows().openWorld("selftest", () -> mc.gui.setScreen(new net.minecraft.client.gui.screens.TitleScreen()));
    } else {
     mc.createWorldOpenFlows().createFreshLevel("selftest",
      new net.minecraft.world.level.LevelSettings("ChaosTablist selftest", net.minecraft.world.level.GameType.CREATIVE, new net.minecraft.world.level.LevelSettings.DifficultySettings(net.minecraft.world.Difficulty.PEACEFUL, false, false), true, net.minecraft.world.level.WorldDataConfiguration.DEFAULT),
@@ -116,7 +116,7 @@ public final class SelfTest {
 				server.execute(() -> TabServer.open(player(server)));
 			}
 			case 100 -> {
-                if (waitFor(mc.screen instanceof TablistEditorScreen, "Editor open", mc.screen == null ? "no screen" : mc.screen.getClass().getSimpleName())) return;
+                if (waitFor(mc.gui.screen() instanceof TablistEditorScreen, "Editor open", mc.gui.screen() == null ? "no screen" : mc.gui.screen().getClass().getSimpleName())) return;
                 editor(mc, TablistEditorScreen::inputForTest);
                 ChaosTablist.LOGGER.info("[selftest] PASS: mouse tab selection, Ctrl+A and Unicode input");
                 shot(mc, "editor_general");
@@ -187,12 +187,12 @@ public final class SelfTest {
 						e.saveForTest();
 					});
 				} else if (ticks == after + 90) {
-					if (!(mc.screen instanceof TablistEditorScreen editor)) throw new IllegalStateException("[selftest] Missing editor");
+					if (!(mc.gui.screen() instanceof TablistEditorScreen editor)) throw new IllegalStateException("[selftest] Missing editor");
                     if (waitFor(editor.confirmedForTest(), "Save acknowledgement", editor.saveDebugForTest())) return;
                     if (!TabStore.config().serverName.equals("Servidor de Prueba")) throw new IllegalStateException("[selftest] Server did not apply the saved name");
                     ChaosTablist.LOGGER.info("[selftest] guardado por red: serverName={} header1={}",
 							TabStore.config().serverName, TabStore.config().header.get(1));
-					mc.setScreen(null);
+					mc.gui.setScreen(null);
 					TabRenderer.testFakes = 14;
 					mc.options.keyPlayerList.setDown(true);
 				} else if (ticks == after + 102) {
@@ -207,7 +207,7 @@ public final class SelfTest {
                         server.execute(() -> TabServer.open(player(server)));
                     }
                 } else if (ticks == after + 110) {
-                    if (waitFor(mc.screen instanceof TablistEditorScreen, "Reopen editor", "waiting for server")) return;
+                    if (waitFor(mc.gui.screen() instanceof TablistEditorScreen, "Reopen editor", "waiting for server")) return;
                 } else if (ticks == after + 115) {
                     editor(mc, TablistEditorScreen::scrollAdvancedForTest);
                 } else if (ticks == after + 120) {
@@ -217,14 +217,14 @@ public final class SelfTest {
                 } else if (ticks == after + 127) {
                     shot(mc, "design_library");
                 } else if (ticks == after + 129) {
-                    mc.screen.onClose();
+                    mc.gui.screen().onClose();
                     editor(mc, e -> e.presetForTest("minimal"));
                 } else if (ticks == after + 134) {
                     shot(mc, "preset_minimal");
                     editor(mc, TablistEditorScreen::onClose);
                 } else if (ticks == after + 139) {
                     shot(mc, "unsaved_confirmation");
-                    mc.screen.onClose();
+                    mc.gui.screen().onClose();
                 } else if (ticks == after + 142) {
                     editor(mc, e -> e.headerForTest("<unknown>Diagnostic test"));
                 } else if (ticks == after + 150) {
@@ -235,11 +235,11 @@ public final class SelfTest {
                         TabServer.apply(server, config);
                     });
                 } else if (ticks == after + 160) {
-                    if (!(mc.screen instanceof TablistEditorScreen e)) throw new IllegalStateException("[selftest] Missing editor");
+                    if (!(mc.gui.screen() instanceof TablistEditorScreen e)) throw new IllegalStateException("[selftest] Missing editor");
                     if (waitFor(e.remoteConflictForTest(), "Server revision broadcast", e.saveDebugForTest())) return;
                     e.saveForTest();
                 } else if (ticks == after + 170) {
-                    if (!(mc.screen instanceof TablistEditorScreen e)) throw new IllegalStateException("[selftest] Missing editor");
+                    if (!(mc.gui.screen() instanceof TablistEditorScreen e)) throw new IllegalStateException("[selftest] Missing editor");
                     if (waitFor(e.conflictForTest(), "Concurrent save rejection", e.saveDebugForTest())) return;
                     shot(mc, "save_conflict");
                 } else if (ticks == after + 173) {
@@ -249,7 +249,7 @@ public final class SelfTest {
                         if (!e.confirmedForTest()) throw new IllegalStateException("[selftest] Reload did not restore a clean draft");
                     });
                     ChaosTablist.LOGGER.info("[selftest] PASS: presets, close confirmation, diagnostics, network save and conflict recovery");
-                    mc.setScreen(null); mc.stop();
+                    mc.gui.setScreen(null); mc.stop();
                 }
 			}
 		}
@@ -269,7 +269,7 @@ public final class SelfTest {
 	}
 
 	private static void editor(Minecraft mc, java.util.function.Consumer<TablistEditorScreen> action) {
-		if (mc.screen instanceof TablistEditorScreen e) {
+		if (mc.gui.screen() instanceof TablistEditorScreen e) {
 			action.accept(e);
         } else {
             throw new IllegalStateException("[selftest] Expected the editor but it was not open");
@@ -298,7 +298,7 @@ public final class SelfTest {
 	}
 
 	private static void shot(Minecraft mc, String name) {
-		Screenshot.grab(mc.gameDirectory, "selftest_" + name + ".png", mc.getMainRenderTarget(), 1,
+		Screenshot.grab(mc.gameDirectory, "selftest_" + (Boolean.getBoolean("chaostablist.forceVanilla") ? "vanilla_" : "") + name + ".png", mc.gameRenderer.mainRenderTarget(), 1,
 				msg -> ChaosTablist.LOGGER.info("[selftest] {}", msg.getString()));
 	}
 }

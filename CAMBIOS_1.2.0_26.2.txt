@@ -1,0 +1,12 @@
+Chaos Tablist 1.2.0 para Minecraft 26.2
+Autor: Luis Enrique Gil Mayser
+Requiere Java 25.
+
+Fabric Loader 0.19.5 + Fabric API 0.161.0+26.2
+Forge 65.1.3
+NeoForge 26.2.0.90
+
+Adaptados el gestor de pantallas, el HUD y el Tab, la consulta de GPU, el marcador y la API de colores de Minecraft 26.2.
+Actualizado el icono de NeoForge al formato iconFile para evitar el aviso del cargador.
+85 regresiones por cargador, con comprobaciones nuevas de colores con nombre, códigos antiguos y restablecimiento.
+Consulta VALIDATION.md para las pruebas dentro del juego y sus límites.
